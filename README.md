@@ -1,25 +1,19 @@
 # Venturo WhatsApp Business Catalog — Antigravity Plugin
 
-Generate **WhatsApp Business catalog images** (3840x3840) for Venturo's software development service packages. Programmatic Pillow design + Venturo brand identity + auto logo compositing.
+Generate **WhatsApp Business catalog images** for Venturo's software development packages using **Dreamina AI** (via Playwright browser automation). Logo Venturo diupload sebagai reference image, AI composite otomatis.
 
 ## Prerequisites
 
-- [Antigravity CLI](https://antigravity.google/docs/cli/install)
-- Python 3.8+, Pillow: `pip install Pillow`
+- Python 3.8+
+- Playwright: `pip install playwright && playwright install chromium`
 
-## Clone & Install
+## Install
 
 ```bash
 git clone https://github.com/<username>/venturo-catalog-plugin.git
 cd Venturo_Skills_Catalog
-
-# Install Python dependencies
-pip install Pillow
-
-# Install sebagai Antigravity plugin
+pip install playwright && playwright install chromium
 ./install.sh
-# atau: ./install.sh --target plugin
-# atau: ./install.sh --target skill (slash command /venturo-poster)
 ```
 
 **Windows (PowerShell):**
@@ -27,59 +21,56 @@ pip install Pillow
 .\install.ps1
 ```
 
-Register plugin:
+## Quick Start
+
 ```bash
-agy plugin install ~/.gemini/antigravity-cli/plugins/venturo-poster
-```
+# Generate satu paket
+python3 venturo-poster/scripts/generate_base.py --tier starter
 
-## Cara Pakai
+# Generate semua paket sekaligus
+python3 venturo-poster/scripts/generate_base.py --tier all
 
-**Via TUI:**
-```bash
-agy
-# lalu ketik:  /venturo-poster
-# atau chat:   "buat katalog WhatsApp buat Venturo Enterprise"
-#              "bikin catalog gambar paket Growth"
-```
-
-**Via script langsung:**
-```bash
-# 1. Generate programmatic catalog design (4K)
-python3 venturo-poster/scripts/generate_design.py \
-  --output /tmp/design.png
-
-# 2. Composite Venturo logo (auto position)
-python3 venturo-poster/scripts/composite_logo.py \
-  --input /tmp/design.png \
-  --output venturo-poster/output/katalog.png \
+# Custom prompt
+python3 venturo-poster/scripts/generate_base.py \
   --tier growth \
-  --position auto \
-  --logo-only
+  --prompt "Buat katalog WhatsApp untuk Venturo Growth Package dengan tema profesional"
+
+# Custom output
+python3 venturo-poster/scripts/generate_base.py \
+  --tier enterprise \
+  --output venturo-poster/output/katalog_enterprise.png
 ```
 
-## Output Specs
+## Cara Kerja
 
-| Item | Spec |
-|------|------|
-| Ukuran | 3840 x 3840 px (4K, 1:1) |
-| Format | PNG |
-| Konten | Hero, stat counters, 3 package cards, CTA footer, logo Venturo |
-| Bahasa | Indonesia |
+1. Script membuka Chromium (non-headless) ke Dreamina
+2. **Login manual** — user login ke akun ByteDance/Dreamina
+3. Script upload `assets/image_1c155d.png` (logo Venturo) sebagai reference image
+4. Script isi prompt text otomatis (dengan fallback manual)
+5. AI generate gambar katalog dengan logo Venturo sudah ter-composite
+6. Hasil disimpan sebagai PNG
+
+## Package Tiers
+
+| Tier | Budget | Ideal untuk |
+|------|--------|-------------|
+| **Starter** | Rp20 Juta – Rp80 Juta | UMKM, startup |
+| **Growth** | Rp80 Juta – Rp250 Juta | Finance, HRIS, CRM, ERP |
+| **Enterprise** | Mulai Rp250 Juta | AI, Big Data, cybersecurity |
 
 ## Project Structure
 
 ```
-venturo-poster/                          # Plugin root
-├── plugin.json                          # Manifest (agy plugin install)
-├── skills/venturo-poster.md             # Skill def → /venturo-poster
-├── assets/image_1c155d.png              # Venturo logo (asli)
+venturo-poster/
+├── plugin.json
+├── skills/venturo-poster.md
+├── assets/image_1c155d.png          # Venturo logo (reference untuk AI)
 ├── scripts/
-│   ├── generate_design.py               # Programmatic design renderer (Pillow)
-│   └── composite_logo.py                # Logo compositing + auto positioning
-├── templates/packages_context.md        # Service tier reference
-└── output/                              # Generated catalog images
-├── install.sh                           # Linux/macOS installer
-├── install.ps1                          # Windows installer
+│   └── generate_base.py             # Dreamina AI + Playwright manual login
+├── templates/packages_context.md    # Service tier reference
+├── output/                          # Generated images
+├── install.sh
+├── install.ps1
 └── README.md
 ```
 
