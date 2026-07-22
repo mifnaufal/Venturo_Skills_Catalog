@@ -6,7 +6,8 @@ Generate **WhatsApp Business catalog images** (1080x1080) for Venturo's software
 
 - [Antigravity CLI](https://antigravity.google/docs/cli/install)
 - Python 3.8+, Pillow: `pip install Pillow`
-- Akun [Dreamina (CapCut)](https://dreamina.capcut.com) — gratis, dapat 225 credits/hari
+- Playwright + Chromium: `pip install playwright && python3 -m playwright install chromium`
+- Akun [Dreamina (CapCut)](https://dreamina.capcut.com) — gratis, 225 credits/hari
 
 ## Clone & Install
 
