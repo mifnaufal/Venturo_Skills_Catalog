@@ -4,6 +4,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PLUGIN_SRC="$SCRIPT_DIR/venturo-poster"
 PLUGIN_DIR="$HOME/.gemini/config/plugins/venturo-poster"
+PLUGIN_DIR_CLI="$HOME/.gemini/antigravity-cli/plugins/venturo-poster"
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -26,14 +27,19 @@ if [ ! -f "$PLUGIN_SRC/assets/image_1c155d.png" ]; then
 fi
 
 # 2. Remove stale plugin
-if [ -d "$PLUGIN_DIR" ]; then
-    echo "Removing old plugin..."
-    rm -rf "$PLUGIN_DIR"
-fi
+for dir in "$PLUGIN_DIR" "$PLUGIN_DIR_CLI"; do
+    if [ -d "$dir" ]; then
+        echo "Removing old plugin from $dir..."
+        rm -rf "$dir"
+    fi
+done
 
 # 3. Copy fresh plugin
 cp -r "$PLUGIN_SRC" "$PLUGIN_DIR"
-echo -e "${GREEN}✔ Plugin copied to $PLUGIN_DIR${NC}"
+cp -r "$PLUGIN_SRC" "$PLUGIN_DIR_CLI"
+echo -e "${GREEN}✔ Plugin copied to${NC}"
+echo -e "${GREEN}  • $PLUGIN_DIR${NC}"
+echo -e "${GREEN}  • $PLUGIN_DIR_CLI${NC}"
 
 # 4. Install Playwright
 echo ""

@@ -3,6 +3,7 @@ param()
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $PluginSrc = Join-Path $ScriptDir "venturo-poster"
 $PluginDir = "$env:USERPROFILE\.gemini\config\plugins\venturo-poster"
+$PluginDirCli = "$env:USERPROFILE\.gemini\antigravity-cli\plugins\venturo-poster"
 $Manifest  = Join-Path $PluginSrc "plugin.json"
 $LogoPath  = Join-Path $PluginSrc "assets\image_1c155d.png"
 
@@ -22,15 +23,22 @@ if (-not (Test-Path $LogoPath)) {
 }
 
 # 2. Remove stale plugin
-if (Test-Path $PluginDir) {
-    Write-Host "Removing old plugin..."
-    Remove-Item -Recurse -Force $PluginDir
+$dirs = @($PluginDir, $PluginDirCli)
+foreach ($dir in $dirs) {
+    if (Test-Path $dir) {
+        Write-Host "Removing old plugin from $dir..."
+        Remove-Item -Recurse -Force $dir
+    }
 }
 
 # 3. Copy fresh plugin
 New-Item -ItemType Directory -Path (Split-Path $PluginDir -Parent) -Force | Out-Null
+New-Item -ItemType Directory -Path (Split-Path $PluginDirCli -Parent) -Force | Out-Null
 Copy-Item -Recurse -Path $PluginSrc -Destination $PluginDir
-Write-Host "✔ Plugin copied to $PluginDir" -ForegroundColor Green
+Copy-Item -Recurse -Path $PluginSrc -Destination $PluginDirCli
+Write-Host "✔ Plugin copied to:" -ForegroundColor Green
+Write-Host "  • $PluginDir" -ForegroundColor Green
+Write-Host "  • $PluginDirCli" -ForegroundColor Green
 
 # 4. Install Playwright
 Write-Host ""

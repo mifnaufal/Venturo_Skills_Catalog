@@ -8,56 +8,115 @@ import time
 from pathlib import Path
 
 
-def get_plugin_root():
-    return Path(__file__).resolve().parent.parent
+PLUGIN_ROOT = Path(__file__).resolve().parent.parent
+LOGO_PATH = PLUGIN_ROOT / "assets" / "image_1c155d.png"
+CONTEXT_PATH = PLUGIN_ROOT / "templates" / "packages_context.md"
 
 
-LOGO_PATH = get_plugin_root() / "assets" / "image_1c155d.png"
+def load_context():
+    raw = CONTEXT_PATH.read_text(encoding="utf-8")
+    return raw
 
-DREAMINA_CONTEXT = {
-    "starter": (
-        "Paket STARTER (Rp20-80 Juta). "
-        "Ideal untuk UMKM dan startup. "
-        "Tim: 1 Business Analyst + 1 Senior Software Engineer. "
-        "Layanan: website & mobile app sederhana, sistem operasional."
-    ),
-    "growth": (
-        "Paket GROWTH (Rp80-250 Juta). "
-        "Ideal untuk perusahaan bertumbuh. "
-        "Tim: 1 BA + 1 Senior SE + 1 UI/UX Designer + 1 QA Engineer. "
-        "Sistem: Finance, HRIS, CRM, ERP, Inventory, WMS."
-    ),
-    "enterprise": (
-        "Paket ENTERPRISE (Mulai Rp250 Juta). "
-        "Ideal untuk enterprise. "
-        "Tim: 6 ahli + Penetration Tester. "
-        "Layanan: AI, Big Data, cybersecurity, integrasi lintas sistem."
-    ),
-}
 
-BRAND_PROMPT = """
-BRAND: Venturo — Software House Malang
-PRIMARY COLOR: #006D79 (teal)
-SECONDARY: #009BAD (light teal)
-DARK: #202020
+def extract_tier_themes(raw, tier_key):
+    lines = raw.split("\n")
+    in_tier = False
+    themes = []
+    keywords = ""
+    capture_until_header = False
+    for line in lines:
+        stripped = line.strip()
+        header_marker = f"### {tier_key} Package"
+        if header_marker in stripped:
+            in_tier = True
+            continue
+        if in_tier:
+            if stripped.startswith("### ") and "Package" in stripped and header_marker not in stripped:
+                break
+            if stripped.startswith("## "):
+                break
+            if "**Prompt Keywords:**" in stripped:
+                keywords = stripped.split("**Prompt Keywords:**")[-1].strip().strip("`")
+                continue
+            if stripped.startswith("- ") and "**" not in stripped:
+                themes.append(stripped.lstrip("- "))
+    return themes, keywords
+
+
+def build_prompt(tier_name):
+    tier_label = {"starter": "Starter", "growth": "Growth", "enterprise": "Enterprise"}
+    team_info = {
+        "starter": "1 Business Analyst + 1 Senior Software Engineer",
+        "growth": "1 Business Analyst + 1 Senior Software Engineer + 1 UI/UX Designer + 1 QA Engineer",
+        "enterprise": "1 Business Analyst + 1 Senior Software Engineer + 1 Intermediate Software Engineer + 1 UI/UX Designer + 1 QA Engineer + 1 Penetration Tester",
+    }
+    budget = {"starter": "Rp20 Juta – Rp80 Juta", "growth": "Rp80 Juta – Rp250 Juta", "enterprise": "Mulai Rp250 Juta"}
+    ideal = {
+        "starter": "UMKM, usaha mikro, perusahaan kecil, dan startup yang membutuhkan website, mobile application, atau sistem operasional sederhana",
+        "growth": "Perusahaan bertumbuh yang membutuhkan Finance System, HRIS, CRM, ERP, Inventory, WMS, atau sistem operasional lainnya",
+        "enterprise": "Perusahaan menengah hingga enterprise yang membutuhkan sistem berskala besar, integrasi lintas sistem, AI, Big Data, dan keamanan tingkat tinggi",
+    }
+
+    raw = load_context()
+    themes, keywords = extract_tier_themes(raw, tier_label[tier_name])
+
+    prompt = f"""Buat gambar katalog WhatsApp Business untuk paket {tier_label[tier_name]}.
+
+VENTURO — Software House Malang
+Paket: {tier_label[tier_name]}
+Budget: {budget[tier_name]}
+Ideal untuk: {ideal[tier_name]}
+Tim: {team_info[tier_name]}
+
+MASALAH YANG DISELESAIKAN:
+- Perusahaan membutuhkan website/aplikasi yang sesuai dengan proses bisnisnya
+- Aplikasi berlangganan tidak mampu memenuhi kebutuhan operasional
+- Sulit melakukan kustomisasi karena keterbatasan sistem
+- Sistem tidak dapat terintegrasi dengan layanan lain
+- Tampilan aplikasi kurang user-friendly
+
+SOLUSI:
+- Pengembangan Website & Mobile Application (Android & iOS) khusus sesuai kebutuhan
+- Analisis bisnis untuk memastikan fitur mendukung proses operasional
+- Desain UI/UX modern, responsif, dan mudah digunakan
+- Integrasi dengan ERP, CRM, HRIS, Payment Gateway, WhatsApp, API
+- Dashboard monitoring dan reporting
+
+HASIL:
+- Aplikasi sesuai kebutuhan dan proses bisnis perusahaan
+- Efisiensi operasional melalui digitalisasi dan otomatisasi
+- Sistem fleksibel dan mudah dikembangkan
+- Pengalaman pengguna yang lebih baik
+
+VISUAL THEMES:"""
+
+    for theme in themes:
+        prompt += f"\n- {theme}"
+
+    if keywords:
+        prompt += f"\n\nSTYLE KEYWORDS: {keywords}"
+
+    prompt += """
+
+BRAND & DESAIN:
+- Nama: Venturo — Software House Malang
+- Warna Primer: #006D79 (teal)
+- Warna Sekunder: #009BAD (light teal)
+- Warna Gelap: #202020
+- Background: #FFFFFF
+- Heading: #292929
+- Body Text: #4B5563
 
 DESIGN RULES:
 - WhatsApp Business catalog image, square 1:1
 - Clean, professional, modern, minimal
 - Bahasa Indonesia untuk semua teks
-- Sertakan: nama paket, range harga, fitur utama, tim, timeline
 - Gunakan referensi logo yang diupload — tempatkan logo Venturo secara natural di area yang bersih
+- Tampilkan: nama paket, range harga, tim, fitur utama
 - Tidak boleh ada elemen 3D, foto stok, atau gambar generik
-- Flat design dengan tipografi yang jelas
-"""
+- Flat design dengan tipografi bold condensed sans-serif yang jelas"""
 
-
-def build_prompt(tier_name, context):
-    return (
-        f"Buat gambar katalog WhatsApp Business untuk {tier_name.upper()}.\n\n"
-        f"KONTEN:\n{context}\n"
-        f"{BRAND_PROMPT}"
-    )
+    return prompt
 
 
 def find_file_input(page):
@@ -129,7 +188,7 @@ def process_tier(browser, tier_name, output_path, prompt, timeout_ms):
     print(f"  Output: {output_path}")
     print(f"{'=' * 60}")
 
-    page.goto("https://dreamina.jianying.com/", wait_until="domcontentloaded")
+    page.goto("https://dreamina.capcut.com/", wait_until="domcontentloaded")
 
     print("\n" + "=" * 60)
     print("  MANUAL LOGIN")
@@ -146,7 +205,7 @@ def process_tier(browser, tier_name, output_path, prompt, timeout_ms):
         print("  Login timeout (2min). Continuing...")
         input("  Press Enter once logged in...")
 
-    page.goto("https://dreamina.jianying.com/ai-tool/image", wait_until="domcontentloaded")
+    page.goto("https://dreamina.capcut.com/ai-tool/image", wait_until="domcontentloaded")
     page.wait_for_timeout(3000)
 
     print("\n" + "=" * 60)
@@ -284,7 +343,7 @@ def main():
                 if args.prompt_file and args.prompt_file.exists():
                     prompt = args.prompt_file.read_text()
                 else:
-                    prompt = build_prompt(tier, DREAMINA_CONTEXT.get(tier, ""))
+                    prompt = build_prompt(tier)
 
             out_path = resolve_output_path(tier, args.output)
             process_tier(browser, tier, out_path, prompt, args.timeout)
