@@ -20,6 +20,7 @@ import os
 import sys
 import time
 from pathlib import Path
+from PIL import Image as PILImage
 
 TIER_DATA = {
     "starter": {
@@ -58,7 +59,25 @@ def hex_to_rgb(h):
     h = h.lstrip("#")
     return tuple(int(h[i:i+2], 16) for i in (0, 2, 4))
 
-def render_catalog(input_path, output_path, tier_name, logo_position):
+def _overlay_logo(bg, logo, logo_position):
+    W, H = bg.size
+    logo_scale = 0.15
+    new_logo_w = int(W * logo_scale)
+    aspect = logo.height / logo.width
+    new_logo_h = int(new_logo_w * aspect)
+    logo_resized = logo.resize((new_logo_w, new_logo_h), PILImage.LANCZOS)
+    padding = int(W * 0.04)
+    if logo_position == "bottom-right":
+        lx, ly = W - new_logo_w - padding, H - new_logo_h - padding
+    else:
+        lx, ly = W - new_logo_w - padding, padding
+    if logo_resized.mode == "RGBA":
+        bg.paste(logo_resized, (lx, ly), logo_resized)
+    else:
+        bg.paste(logo_resized, (lx, ly))
+
+
+def render_catalog(input_path, output_path, tier_name, logo_position, logo_only=False):
     start = time.time()
 
     try:
@@ -85,6 +104,15 @@ def render_catalog(input_path, output_path, tier_name, logo_position):
     bg = Image.open(input_path).convert("RGBA")
     logo = Image.open(logo_path).convert("RGBA")
     W, H = bg.size
+
+    if logo_only:
+        _overlay_logo(bg, logo, logo_position)
+        Path(output_path).parent.mkdir(parents=True, exist_ok=True)
+        bg.save(output_path, "PNG", optimize=True)
+        elapsed = time.time() - start
+        print(f"Logo composited in {elapsed:.2f}s")
+        print(f"Saved: {output_path}")
+        return True
 
     # Find fonts
     font_dirs = [
@@ -202,22 +230,7 @@ def render_catalog(input_path, output_path, tier_name, logo_position):
     bg = Image.alpha_composite(bg, overlay)
 
     # === LOGO COMPOSITING ===
-    logo_scale = 0.15
-    new_logo_w = int(W * logo_scale)
-    aspect = logo.height / logo.width
-    new_logo_h = int(new_logo_w * aspect)
-    logo_resized = logo.resize((new_logo_w, new_logo_h), Image.LANCZOS)
-
-    padding = int(W * 0.04)
-    if logo_position == "bottom-right":
-        lx, ly = W - new_logo_w - padding, H - new_logo_h - padding
-    else:
-        lx, ly = W - new_logo_w - padding, padding
-
-    if logo_resized.mode == "RGBA":
-        bg.paste(logo_resized, (lx, ly), logo_resized)
-    else:
-        bg.paste(logo_resized, (lx, ly))
+    _overlay_logo(bg, logo, logo_position)
 
     Path(output_path).parent.mkdir(parents=True, exist_ok=True)
     bg.save(output_path, "PNG", optimize=True)
@@ -236,9 +249,11 @@ def main():
     parser.add_argument("--position", default="bottom-right",
                         choices=["bottom-right", "top-right"],
                         help="Logo position")
+    parser.add_argument("--logo-only", action="store_true",
+                        help="Skip text overlay, only composite the logo onto the input image")
     args = parser.parse_args()
 
-    ok = render_catalog(args.input, args.output, args.tier, args.position)
+    ok = render_catalog(args.input, args.output, args.tier, args.position, args.logo_only)
     sys.exit(0 if ok else 1)
 
 if __name__ == "__main__":

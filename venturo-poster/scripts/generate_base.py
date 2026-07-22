@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+"""
+generate_base.py — LEGACY / DEPRECATED
+
+Use generate_design.py instead (programmatic Pillow illustration).
+This file kept for reference only — Dreamina browser automation path.
+"""
 
 import argparse
 import json
