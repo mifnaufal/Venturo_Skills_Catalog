@@ -4,7 +4,6 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PLUGIN_SRC="$SCRIPT_DIR/venturo-poster"
 PLUGIN_DIR="$HOME/.gemini/antigravity-cli/plugins/venturo-poster"
-SKILL_DEST="$HOME/.gemini/antigravity-cli/skills/venturo-poster.md"
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
