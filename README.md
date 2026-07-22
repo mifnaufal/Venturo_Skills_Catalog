@@ -33,6 +33,26 @@ Register plugin:
 agy plugin install ~/.gemini/antigravity-cli/plugins/venturo-poster
 ```
 
+## Setup Dreamina
+
+Before generating, you need a Dreamina session ID:
+
+1. Buka [dreamina.capcut.com](https://dreamina.capcut.com), login (Google/Facebook/TikTok)
+2. Buka DevTools (F12) → **Application** tab → **Cookies** → `dreamina.capcut.com`
+3. Cari cookie `sessionid` atau `sessionid_ss`, copy nilainya
+4. Edit `venturo-poster/config/cookies.json`:
+```json
+{
+  "api_url": "https://j.aisk.de5.net",
+  "session_ids": ["us-paste_session_id_disini"],
+  "region": "us"
+}
+```
+   Tambahkan prefix region (`us-`, `hk-`, `sg-`, `jp-`) sesuai lokasi akunmu.
+   Bisa tambah multiple session ID (dipisah koma) biar auto-rotate jika limit habis.
+
+> `config/cookies.json` sudah di `.gitignore` — tidak akan ter-commit.
+
 ## Cara Pakai
 
 **Via TUI:**
