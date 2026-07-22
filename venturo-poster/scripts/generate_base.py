@@ -1,68 +1,20 @@
 #!/usr/bin/env python3
 
 import argparse
-import hashlib
 import json
 import os
 import sys
 import time
-import uuid
 from pathlib import Path
 
-from curl_cffi import requests
+from playwright.sync_api import sync_playwright
 
-MODEL_CHAIN = ["dreamina-4.5", "dreamina-4.1", "dreamina-4.0"]
-POLL_INTERVAL = 3
-POLL_TIMEOUT = 180
+PLUGIN_ROOT = Path(__file__).resolve().parent.parent
 
-REGION_CONFIG = {
-    "us": {
-        "base_url": "https://mweb-api-sg.capcut.com",
-        "aid": 513641, "region_code": "US", "store_region": "us",
-    },
-    "sg": {
-        "base_url": "https://mweb-api-sg.capcut.com",
-        "aid": 513641, "region_code": "SG", "store_region": "hk",
-    },
-    "hk": {
-        "base_url": "https://mweb-api-sg.capcut.com",
-        "aid": 513641, "region_code": "HK", "store_region": "hk",
-    },
-    "jp": {
-        "base_url": "https://mweb-api-sg.capcut.com",
-        "aid": 513641, "region_code": "JP", "store_region": "hk",
-    },
-}
-
-MODEL_MAP = {
-    "dreamina-4.5": "high_aes_general_v40l",
-    "dreamina-4.1": "high_aes_general_v41",
-    "dreamina-4.0": "high_aes_general_v40",
-    "jimeng-4.5": "high_aes_general_v40l",
-    "jimeng-4.1": "high_aes_general_v41",
-    "jimeng-4.0": "high_aes_general_v40",
-}
-
-RESOLUTIONS = {
-    "1k": {"1:1": (1024, 1024, 1)},
-    "2k": {"1:1": (2048, 2048, 1)},
-    "4k": {"1:1": (4096, 4096, 101)},
-}
-
-PLATFORM_CODE = "7"
-VERSION_CODE = "5.8.0"
-DRAFT_VERSION = "3.3.7"
-DRAFT_MIN_VERSION = "3.0.2"
-
-_sess = None
-
-
-def get_plugin_root():
-    return Path(__file__).resolve().parent.parent
-
+# ── Config ─────────────────────────────────────────────────────
 
 def load_config():
-    cfg_path = get_plugin_root() / "config" / "cookies.json"
+    cfg_path = PLUGIN_ROOT / "config" / "cookies.json"
     if not cfg_path.exists():
         return {"session_ids": [], "region": "sg"}
     try:
@@ -72,19 +24,11 @@ def load_config():
         return {"session_ids": [], "region": "sg"}
 
 
-def new_uuid():
-    return str(uuid.uuid4())
-
-
-def md5(s):
-    return hashlib.md5(s.encode()).hexdigest()
-
-
 def build_prompt(base_prompt, tier, aesthetics, lighting, bg_tone):
     tier_hints = {
-        "starter": "Clean, minimalist, modern, approachable. Bright teal/green accents.",
-        "growth": "Professional, interconnected, data-driven dashboards. Corporate feel.",
-        "enterprise": "High-tech, dark cyberpunk, data streams, cybersecurity, holographic.",
+        "starter": "Clean, minimalist, modern. Bright teal/green accents.",
+        "growth": "Professional, interconnected dashboards. Corporate feel.",
+        "enterprise": "High-tech, dark cyberpunk, data streams, cybersecurity.",
     }
     return (
         f"Background visual untuk katalog WhatsApp Business — jasa pengembangan software. "
@@ -94,304 +38,183 @@ def build_prompt(base_prompt, tier, aesthetics, lighting, bg_tone):
         f"Human elements: {lighting}. "
         f"Background tone: {bg_tone}. "
         f"CRITICAL: Hanya background visual — JANGAN ada teks, JANGAN ada logo, JANGAN ada tulisan apapun. "
-        f"Area tengah 70% harus bersih/soft agar teks bisa dibaca ketika ditimpa. "
-        f"Gunakan gradient halus, jangan terlalu ramai di bagian tengah. "
+        f"Area tengah 70% harus bersih/soft agar teks terbaca. "
+        f"Gunakan gradient halus, jangan terlalu ramai di tengah. "
         f"Format kotak 1:1 untuk katalog WhatsApp. "
-        f"Kualitas tinggi, resolusi 8K, lighting profesional."
+        f"Kualitas tinggi, lighting profesional."
     )
 
 
-def resolve_resolution(resolution="2k", ratio="1:1"):
-    rg = RESOLUTIONS.get(resolution)
-    if not rg:
-        return resolve_resolution("2k", ratio)
-    r = rg.get(ratio)
-    if not r:
-        return resolve_resolution(resolution, "1:1")
-    return {"width": r[0], "height": r[1], "image_ratio": r[2], "resolution_type": resolution}
-
-
-def build_core_param(model_internal, prompt, seed, ratio_res, negative_prompt=""):
-    cp = {
-        "type": "", "id": new_uuid(),
-        "model": model_internal, "prompt": prompt, "seed": seed,
-        "sample_strength": 0.5,
-        "image_ratio": ratio_res["image_ratio"],
-        "large_image_info": {
-            "type": "", "id": new_uuid(),
-            "min_version": DRAFT_MIN_VERSION,
-            "height": ratio_res["height"],
-            "width": ratio_res["width"],
-            "resolution_type": ratio_res["resolution_type"],
-        },
-        "intelligent_ratio": False,
-    }
-    if negative_prompt:
-        cp["negative_prompt"] = negative_prompt
-    return cp
-
-
-def build_metrics_extra(model_name, user_model, submit_id, ratio_res):
-    scene = {
-        "type": "image",
-        "scene": "ImageBasicGenerate",
-        "modelReqKey": user_model,
-        "resolutionType": ratio_res["resolution_type"],
-        "benefitCount": 4,
-        "reportParams": {
-            "enterSource": "generate",
-            "vipSource": "generate",
-            "extraVipFunctionKey": f"{user_model}-{ratio_res['resolution_type']}",
-            "useVipFunctionDetailsReporterHoc": True,
-        },
-    }
-    return json.dumps({
-        "promptSource": "custom",
-        "generateCount": 1,
-        "enterFrom": "click",
-        "sceneOptions": json.dumps([scene]),
-        "generateId": submit_id,
-        "isRegenerate": False,
-    })
-
-
-def build_draft_content(component_id, core_param):
-    return json.dumps({
-        "type": "draft",
-        "id": new_uuid(),
-        "min_version": DRAFT_MIN_VERSION,
-        "min_features": [],
-        "is_from_tsn": True,
-        "version": DRAFT_VERSION,
-        "main_component_id": component_id,
-        "component_list": [
-            {
-                "type": "image_base_component",
-                "id": component_id,
-                "min_version": DRAFT_MIN_VERSION,
-                "aigc_mode": "workbench",
-                "metadata": {
-                    "type": "", "id": new_uuid(),
-                    "created_platform": 3,
-                    "created_platform_version": "",
-                    "created_time_in_ms": str(int(time.time() * 1000)),
-                    "created_did": "",
-                },
-                "generate_type": "generate",
-                "abilities": {
-                    "type": "", "id": new_uuid(),
-                    "generate": {
-                        "type": "", "id": new_uuid(),
-                        "core_param": core_param,
-                    },
-                    "gen_option": {
-                        "type": "", "id": new_uuid(),
-                        "generate_all": False,
-                    },
-                },
-            },
-        ],
-    })
-
-
-def parse_region(region_str):
-    r = region_str.lower()
+def parse_region(raw):
+    r = raw.lower()
     for prefix, code in [("us-", "us"), ("sg-", "sg"), ("hk-", "hk"), ("jp-", "jp")]:
         if r.startswith(prefix):
-            return code, region_str[3:]
-    return "sg", region_str
+            return code, r[3:]
+    return "sg", raw
 
 
-def dreamina_headers(token, region, uri, ts, web_id):
-    rc = REGION_CONFIG.get(region, REGION_CONFIG["sg"])
-    last7 = uri[-7:]
-    sign_input = f"9e2c|{last7}|{PLATFORM_CODE}|{VERSION_CODE}|{ts}||11ac"
-    sign = md5(sign_input)
-    user_id = md5(token)
+# ── Playwright generation ──────────────────────────────────────
 
-    cookies = "; ".join([
-        f"sid_guard={token}%7C{ts}%7C5184000%7CMon%2C+03-Feb-2025+08%3A17%3A09+GMT",
-        f"sessionid={token}",
-        f"sessionid_ss={token}",
-        f"uid_tt={user_id}",
-        f"uid_tt_ss={user_id}",
-        f"sid_tt={token}",
-        f"store-region={rc['store_region']}",
-        f"store-region-src=uid",
-        f"_tea_web_id={web_id}",
-        "is_staff_user=false",
-    ])
+def generate_via_playwright(prompt, output_path, session_token, region="sg"):
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        context = browser.new_context(
+            viewport={"width": 1400, "height": 900},
+            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/142.0.0.0 Safari/537.36",
+            locale="zh-CN",
+        )
 
-    return {
-        "Accept": "application/json, text/plain, */*",
-        "Content-Type": "application/json",
-        "Cookie": cookies,
-        "Device-Time": str(ts),
-        "Sign": sign,
-        "Sign-Ver": "1",
-        "Appid": str(rc["aid"]),
-        "Pf": PLATFORM_CODE,
-        "Appvr": VERSION_CODE,
-        "Origin": "https://dreamina.capcut.com",
-        "Referer": "https://dreamina.capcut.com/",
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36",
-        "Accept-Language": "zh-CN,zh;q=0.9",
-        "sec-ch-ua": '"Google Chrome";v="142", "Chromium";v="142", "Not_A Brand";v="99"',
-        "sec-ch-ua-mobile": "?0",
-        "sec-ch-ua-platform": '"Windows"',
-        "Sec-Fetch-Dest": "empty",
-        "Sec-Fetch-Mode": "cors",
-        "Sec-Fetch-Site": "same-origin",
-    }
+        # Inject session cookies
+        context.add_cookies([
+            {"name": "sessionid", "value": session_token, "domain": ".capcut.com", "path": "/"},
+            {"name": "sessionid_ss", "value": session_token, "domain": ".capcut.com", "path": "/"},
+            {"name": "sid_tt", "value": session_token, "domain": ".capcut.com", "path": "/"},
+            {"name": "store-region", "value": "hk", "domain": ".capcut.com", "path": "/"},
+        ])
+
+        page = context.new_page()
+        page.goto("https://dreamina.capcut.com/ai-tool/generate/?type=image&workspace=0",
+                  wait_until="networkidle", timeout=30000)
+        page.wait_for_timeout(3000)
+
+        # Dismiss any initial dialog (upsell, etc.)
+        _dismiss_dialogs(page)
+
+        # ── Fill prompt into TipTap editor ──
+        editor = page.locator(".tiptap").first()
+        editor.wait_for(state="visible", timeout=10000)
+        editor.click()
+        page.wait_for_timeout(200)
+        # Use keyboard to clear and type
+        editor.fill("")
+        editor.type(prompt, delay=15)
+        page.wait_for_timeout(500)
+
+        # ── Set ratio 1:1 ──
+        _set_ratio_to_1_1(page)
+
+        # ── Click Generate ──
+        gen_btn = page.locator("button.lv-btn-primary").last
+        gen_btn.wait_for(state="visible", timeout=5000)
+
+        if gen_btn.is_disabled():
+            return False, "Generate button disabled"
+
+        gen_btn.click()
+        page.wait_for_timeout(2000)
+
+        # ── Dismiss any post-click dialogs ──
+        _dismiss_dialogs(page)
+
+        # ── Wait for result ──
+        ok, reason = _wait_for_result(page, output_path, timeout=180)
+        if not ok:
+            # Try again: maybe dialog appeared mid-generation
+            _dismiss_dialogs(page)
+            ok, reason = _wait_for_result(page, output_path, timeout=120)
+
+        browser.close()
+        return ok, reason
 
 
-def call_dreamina(prompt, output_path, token, model="dreamina-4.5", region="sg",
-                  ratio="1:1", resolution="2k"):
-    global _sess
-    if _sess is None:
-        _sess = requests.Session(impersonate="chrome")
+def _dismiss_dialogs(page):
+    for _ in range(3):
+        dialog_count = page.locator("dialog, [role='dialog']").count()
+        if dialog_count == 0:
+            return
+        page.keyboard.press("Escape")
+        page.wait_for_timeout(500)
 
-    rc = REGION_CONFIG.get(region, REGION_CONFIG["sg"])
-    model_internal = MODEL_MAP.get(model)
-    if not model_internal:
-        return False, f"unknown model: {model}"
 
-    ratio_res = resolve_resolution(resolution, ratio)
-    ts = int(time.time())
-    submit_id = new_uuid()
-    component_id = new_uuid()
-    web_id = str(abs(hash(token)) % 999999999999999999 + 7000000000000000000)
-    seed = int(time.time() * 1000000) % 100000000 + 2500000000
-
-    core_param = build_core_param(model_internal, prompt, seed, ratio_res)
-    draft_content = build_draft_content(component_id, core_param)
-    metrics_extra = build_metrics_extra(model, model, submit_id, ratio_res)
-
-    body_data = {
-        "extend": {"root_model": model_internal},
-        "submit_id": submit_id,
-        "metrics_extra": metrics_extra,
-        "draft_content": draft_content,
-        "http_common_info": {"aid": rc["aid"]},
-    }
-
-    uri_path = "/mweb/v1/aigc_draft/generate"
-    url = f"{rc['base_url']}{uri_path}?aid={rc['aid']}&device_platform=web&region={rc['region_code']}&webId={web_id}"
-    headers = dreamina_headers(token, region, uri_path, ts, web_id)
-
+def _set_ratio_to_1_1(page):
     try:
-        resp = _sess.post(url, json=body_data, headers=headers, timeout=60)
-        result = resp.json()
-    except Exception as e:
-        return False, f"submit error: {e}"
+        btn = page.locator('button:has-text("ratio")')
+        if btn.count() == 0:
+            return
+        btn.click()
+        page.wait_for_timeout(500)
 
-    ret = result.get("ret", 0)
-    if ret != 0 and ret != "0":
-        msg = result.get("errmsg", "unknown")
-        fc = result.get("data", {}).get("fail_code", "")
-        if fc:
-            fm = result.get("data", {}).get("fail_starling_message", "")
-            return False, f"Dreamina error [{ret}]: {msg} (code={fc}, {fm})"
-        return False, f"Dreamina error [{ret}]: {msg}"
+        # Click "1:1" in the popover
+        one_one = page.locator('text="1:1"').first
+        if one_one.count() > 0:
+            one_one.click()
+            page.wait_for_timeout(300)
 
-    try:
-        history_id = result["data"]["aigc_data"]["history_record_id"]
-    except (KeyError, TypeError):
-        return False, f"no history_record_id: {json.dumps(result, ensure_ascii=False)[:300]}"
+        # Close popover by clicking somewhere else
+        page.locator(".tiptap").first.click()
+        page.wait_for_timeout(300)
+    except Exception:
+        pass
 
-    print(f"  task_id={history_id}")
 
-    # ── Poll ────────────────────────────────────────────────────
-    poll_uri = "/mweb/v1/get_history_by_ids"
-    poll_url = f"{rc['base_url']}{poll_uri}?aid={rc['aid']}&device_platform=web&region={rc['region_code']}&webId={web_id}"
-    deadline = time.time() + POLL_TIMEOUT
+def _wait_for_result(page, output_path, timeout=180):
+    deadline = time.time() + timeout
+
+    # Count initial history cards
+    initial_cards = _count_image_cards(page)
 
     while time.time() < deadline:
-        time.sleep(POLL_INTERVAL)
+        page.wait_for_timeout(3000)
+        _dismiss_dialogs(page)
 
-        poll_headers = dreamina_headers(token, region, poll_uri, int(time.time()), web_id)
-        poll_body = {
-            "data": {
-                "history_ids": [history_id],
-                "image_info": {
-                    "width": 2048, "height": 2048, "format": "webp",
-                    "image_scene_list": [
-                        {"scene": "normal", "width": 1080, "height": 1080, "uniq_key": "1080", "format": "webp"},
-                    ],
-                },
-            },
-        }
+        cards = _count_image_cards(page)
+        if cards > initial_cards:
+            # New card appeared — get the image
+            img_url = _get_latest_image_url(page)
+            if img_url:
+                page.goto(img_url, wait_until="networkidle")
+                page.screenshot(path=output_path, full_page=False)
+                # Ensure it's PNG
+                _ensure_png(output_path)
+                return True, f"OK (generated)"
 
-        try:
-            presp = _sess.post(poll_url, json=poll_body, headers=poll_headers, timeout=30)
-            status = presp.json()
-        except Exception as e:
-            return False, f"poll error: {e}"
-
-        task_info = status.get("data", {}).get(history_id, {})
-        if not task_info:
-            return False, f"task not found in poll response"
-
-        s = task_info.get("status")
-        total = max(task_info.get("total_image_count", 4), 1)
-        finished = task_info.get("finished_image_count", 0)
-        progress = int(finished / total * 100)
-        print(f"  progress: {progress}%")
-
-        if s in (10, 50):
-            images = []
-            for item in task_info.get("item_list", []):
-                url = (item.get("image", {}).get("large_images", [{}])[0].get("image_url")
-                       or item.get("common_attr", {}).get("cover_url")
-                       or item.get("image_url") or item.get("url"))
-                if url:
-                    images.append(url)
-            if not images:
-                return False, "completed but no images"
-
+        # Also check for any visible image in the DOM
+        img_url = _get_latest_image_url(page)
+        if img_url:
             try:
-                img_resp = _sess.get(images[0], timeout=30)
-                img_resp.raise_for_status()
-                with open(output_path, "wb") as f:
-                    f.write(img_resp.content)
-                return True, f"OK (model={model})"
-            except Exception as e:
-                return False, f"download failed: {e}"
-
-        elif s == 30:
-            fail_code = task_info.get("fail_code", "?")
-            return False, f"generation failed (code={fail_code})"
+                resp = page.goto(img_url, wait_until="networkidle", timeout=15000)
+                if resp and resp.ok:
+                    page.screenshot(path=output_path, full_page=False)
+                    _ensure_png(output_path)
+                    return True, f"OK (from DOM)"
+            except Exception:
+                pass
 
     return False, "timeout"
 
 
-def call_dalle(api_key, prompt, output_path, width=1080, height=1080):
+def _count_image_cards(page):
+    return page.evaluate("""
+        () => document.querySelectorAll('[class*="image-card"], [class*="ImageCard"], [class*="card"] img').length
+    """)
+
+
+def _get_latest_image_url(page):
+    return page.evaluate("""
+        () => {
+            const imgs = document.querySelectorAll('img[src*="ibyteimg"], img[src*="capcut"], img[src*="dreamina"]');
+            for (const img of imgs) {
+                if (img.src && img.src.startsWith('http') && img.naturalWidth > 100) return img.src;
+            }
+            return null;
+        }
+    """)
+
+
+def _ensure_png(path):
     try:
-        import openai
+        from PIL import Image
+        img = Image.open(path)
+        if img.mode != "RGBA":
+            img = img.convert("RGBA")
+        if img.size != (1080, 1080):
+            img = img.resize((1080, 1080), Image.LANCZOS)
+        img.save(path, "PNG", quality=95)
     except ImportError:
-        return False, "openai not installed"
+        pass
 
-    try:
-        client = openai.OpenAI(api_key=api_key)
-        response = client.images.generate(
-            model="dall-e-3", prompt=prompt,
-            size="1024x1024", quality="hd", n=1,
-        )
-        img_resp = requests.get(response.data[0].url, impersonate="chrome", timeout=30)
-        with open(output_path, "wb") as f:
-            f.write(img_resp.content)
-        try:
-            from PIL import Image
-            img = Image.open(output_path)
-            if img.size != (width, height):
-                img = img.resize((width, height), Image.LANCZOS)
-                img.save(output_path, "PNG", quality=95)
-        except ImportError:
-            pass
-        return True, "OK (DALL-E)"
-    except Exception as e:
-        return False, f"DALL-E error: {e}"
 
+# ── Fallback: placeholder ──────────────────────────────────────
 
 def generate_placeholder(output_path, width=1080, height=1080, tier="starter"):
     try:
@@ -438,12 +261,14 @@ def generate_placeholder(output_path, width=1080, height=1080, tier="starter"):
         draw = ImageDraw.Draw(img)
 
     img.save(output_path, "PNG", quality=95)
-    print(f"  placeholder fallback")
+    print("  placeholder fallback")
     return True, "OK (placeholder)"
 
 
+# ── Main ───────────────────────────────────────────────────────
+
 def main():
-    parser = argparse.ArgumentParser(description="Generate Venturo catalog background via Dreamina")
+    parser = argparse.ArgumentParser(description="Generate Venturo catalog background via Dreamina browser automation")
     parser.add_argument("--prompt", required=True)
     parser.add_argument("--output", required=True)
     parser.add_argument("--width", type=int, default=1080)
@@ -468,6 +293,7 @@ def main():
     ok = False
     reason = ""
 
+    # ── Playwright Dreamina ─────────────────────────────────────
     if sessions:
         print(f"\nRegion: {region}")
         print(f"Sessions: {len(sessions)} loaded")
@@ -477,28 +303,21 @@ def main():
             if not sid:
                 continue
             r, token = parse_region(sid)
-            actual_region = region or r
-            for model in MODEL_CHAIN:
-                print(f"  trying model={model} token={token[:12]}... region={actual_region}")
-                print(f"  calling Dreamina API (curl_cffi chrome)...")
-                ok, reason = call_dreamina(enriched, str(output_path), token, model=model, region=actual_region)
-                if ok:
-                    print(f"  ✓ {reason}")
-                    break
-                print(f"  ✗ {reason}")
+            print(f"\nLaunching browser...")
+            print(f"  session={token[:12]}... region={region or r}")
+            try:
+                ok, reason = generate_via_playwright(enriched, str(output_path), token, region or r)
+            except Exception as e:
+                reason = f"exception: {e}"
+                ok = False
             if ok:
+                print(f"  ✓ {reason}")
                 break
+            print(f"  ✗ {reason}")
     else:
         print("\nNo Dreamina config. config/cookies.json not found or empty.")
 
-    if not ok:
-        api_key = os.environ.get("OPENAI_API_KEY")
-        if api_key:
-            print("  fallback → DALL-E 3")
-            ok, reason = call_dalle(api_key, enriched, str(output_path), args.width, args.height)
-            if ok:
-                print(f"  ✓ {reason}")
-
+    # ── Fallback: placeholder ───────────────────────────────────
     if not ok:
         print("  fallback → placeholder gradient")
         ok, reason = generate_placeholder(str(output_path), args.width, args.height, args.tier)
