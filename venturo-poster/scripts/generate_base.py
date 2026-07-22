@@ -7,14 +7,14 @@ import os
 import sys
 import time
 import uuid
-import urllib.request
 from pathlib import Path
+
+from curl_cffi import requests
 
 MODEL_CHAIN = ["dreamina-4.5", "dreamina-4.1", "dreamina-4.0"]
 POLL_INTERVAL = 3
 POLL_TIMEOUT = 180
 
-# ── Region config ──────────────────────────────────────────────
 REGION_CONFIG = {
     "us": {
         "base_url": "https://mweb-api-sg.capcut.com",
@@ -54,7 +54,8 @@ VERSION_CODE = "5.8.0"
 DRAFT_VERSION = "3.3.7"
 DRAFT_MIN_VERSION = "3.0.2"
 
-# ── Helpers ────────────────────────────────────────────────────
+_sess = None
+
 
 def get_plugin_root():
     return Path(__file__).resolve().parent.parent
@@ -64,7 +65,6 @@ def load_config():
     cfg_path = get_plugin_root() / "config" / "cookies.json"
     if not cfg_path.exists():
         return {"session_ids": [], "region": "sg"}
-
     try:
         with open(cfg_path) as f:
             return json.load(f)
@@ -86,7 +86,6 @@ def build_prompt(base_prompt, tier, aesthetics, lighting, bg_tone):
         "growth": "Professional, interconnected, data-driven dashboards. Corporate feel.",
         "enterprise": "High-tech, dark cyberpunk, data streams, cybersecurity, holographic.",
     }
-
     return (
         f"Background visual untuk katalog WhatsApp Business — jasa pengembangan software. "
         f"Service tier: {tier}. "
@@ -203,15 +202,11 @@ def parse_region(region_str):
     return "sg", region_str
 
 
-# ── Dreamina direct API ────────────────────────────────────────
-
-def dreamina_headers(token, region, uri, ts):
+def dreamina_headers(token, region, uri, ts, web_id):
     rc = REGION_CONFIG.get(region, REGION_CONFIG["sg"])
-
     last7 = uri[-7:]
     sign_input = f"9e2c|{last7}|{PLATFORM_CODE}|{VERSION_CODE}|{ts}||11ac"
     sign = md5(sign_input)
-
     user_id = md5(token)
 
     cookies = "; ".join([
@@ -223,7 +218,8 @@ def dreamina_headers(token, region, uri, ts):
         f"sid_tt={token}",
         f"store-region={rc['store_region']}",
         f"store-region-src=uid",
-        f"is_staff_user=false",
+        f"_tea_web_id={web_id}",
+        "is_staff_user=false",
     ])
 
     return {
@@ -238,14 +234,24 @@ def dreamina_headers(token, region, uri, ts):
         "Appvr": VERSION_CODE,
         "Origin": "https://dreamina.capcut.com",
         "Referer": "https://dreamina.capcut.com/",
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/132.0.0.0 Safari/537.36",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36",
+        "Accept-Language": "zh-CN,zh;q=0.9",
+        "sec-ch-ua": '"Google Chrome";v="142", "Chromium";v="142", "Not_A Brand";v="99"',
+        "sec-ch-ua-mobile": "?0",
+        "sec-ch-ua-platform": '"Windows"',
+        "Sec-Fetch-Dest": "empty",
+        "Sec-Fetch-Mode": "cors",
+        "Sec-Fetch-Site": "same-origin",
     }
 
 
 def call_dreamina(prompt, output_path, token, model="dreamina-4.5", region="sg",
                   ratio="1:1", resolution="2k"):
-    rc = REGION_CONFIG.get(region, REGION_CONFIG["sg"])
+    global _sess
+    if _sess is None:
+        _sess = requests.Session(impersonate="chrome")
 
+    rc = REGION_CONFIG.get(region, REGION_CONFIG["sg"])
     model_internal = MODEL_MAP.get(model)
     if not model_internal:
         return False, f"unknown model: {model}"
@@ -254,6 +260,7 @@ def call_dreamina(prompt, output_path, token, model="dreamina-4.5", region="sg",
     ts = int(time.time())
     submit_id = new_uuid()
     component_id = new_uuid()
+    web_id = str(abs(hash(token)) % 999999999999999999 + 7000000000000000000)
     seed = int(time.time() * 1000000) % 100000000 + 2500000000
 
     core_param = build_core_param(model_internal, prompt, seed, ratio_res)
@@ -268,26 +275,25 @@ def call_dreamina(prompt, output_path, token, model="dreamina-4.5", region="sg",
         "http_common_info": {"aid": rc["aid"]},
     }
 
-    uri = "/mweb/v1/aigc_draft/generate"
-    url = f"{rc['base_url']}{uri}"
-    params = f"aid={rc['aid']}&device_platform=web&region={rc['region_code']}"
-    full_url = f"{url}?{params}"
-
-    headers = dreamina_headers(token, region, uri, ts)
-    req = urllib.request.Request(full_url, data=json.dumps(body_data).encode(), headers=headers, method="POST")
+    uri_path = "/mweb/v1/aigc_draft/generate"
+    url = f"{rc['base_url']}{uri_path}?aid={rc['aid']}&device_platform=web&region={rc['region_code']}&webId={web_id}"
+    headers = dreamina_headers(token, region, uri_path, ts, web_id)
 
     try:
-        with urllib.request.urlopen(req, timeout=60) as resp:
-            result = json.loads(resp.read())
+        resp = _sess.post(url, json=body_data, headers=headers, timeout=60)
+        result = resp.json()
     except Exception as e:
         return False, f"submit error: {e}"
 
     ret = result.get("ret", 0)
     if ret != 0 and ret != "0":
         msg = result.get("errmsg", "unknown")
+        fc = result.get("data", {}).get("fail_code", "")
+        if fc:
+            fm = result.get("data", {}).get("fail_starling_message", "")
+            return False, f"Dreamina error [{ret}]: {msg} (code={fc}, {fm})"
         return False, f"Dreamina error [{ret}]: {msg}"
 
-    history_id = None
     try:
         history_id = result["data"]["aigc_data"]["history_record_id"]
     except (KeyError, TypeError):
@@ -297,14 +303,14 @@ def call_dreamina(prompt, output_path, token, model="dreamina-4.5", region="sg",
 
     # ── Poll ────────────────────────────────────────────────────
     poll_uri = "/mweb/v1/get_history_by_ids"
-    poll_url = f"{rc['base_url']}{poll_uri}?aid={rc['aid']}&device_platform=web&region={rc['region_code']}"
+    poll_url = f"{rc['base_url']}{poll_uri}?aid={rc['aid']}&device_platform=web&region={rc['region_code']}&webId={web_id}"
     deadline = time.time() + POLL_TIMEOUT
 
     while time.time() < deadline:
         time.sleep(POLL_INTERVAL)
 
-        poll_headers = dreamina_headers(token, region, poll_uri, int(time.time()))
-        poll_body = json.dumps({
+        poll_headers = dreamina_headers(token, region, poll_uri, int(time.time()), web_id)
+        poll_body = {
             "data": {
                 "history_ids": [history_id],
                 "image_info": {
@@ -314,12 +320,11 @@ def call_dreamina(prompt, output_path, token, model="dreamina-4.5", region="sg",
                     ],
                 },
             },
-        }).encode()
+        }
 
         try:
-            preq = urllib.request.Request(poll_url, data=poll_body, headers=poll_headers, method="POST")
-            with urllib.request.urlopen(preq, timeout=30) as resp:
-                status = json.loads(resp.read())
+            presp = _sess.post(poll_url, json=poll_body, headers=poll_headers, timeout=30)
+            status = presp.json()
         except Exception as e:
             return False, f"poll error: {e}"
 
@@ -328,8 +333,10 @@ def call_dreamina(prompt, output_path, token, model="dreamina-4.5", region="sg",
             return False, f"task not found in poll response"
 
         s = task_info.get("status")
-        progress = task_info.get("finished_image_count", 0) / max(task_info.get("total_image_count", 4), 1) * 100
-        print(f"  progress: {int(progress)}%")
+        total = max(task_info.get("total_image_count", 4), 1)
+        finished = task_info.get("finished_image_count", 0)
+        progress = int(finished / total * 100)
+        print(f"  progress: {progress}%")
 
         if s in (10, 50):
             images = []
@@ -343,7 +350,10 @@ def call_dreamina(prompt, output_path, token, model="dreamina-4.5", region="sg",
                 return False, "completed but no images"
 
             try:
-                urllib.request.urlretrieve(images[0], output_path)
+                img_resp = _sess.get(images[0], timeout=30)
+                img_resp.raise_for_status()
+                with open(output_path, "wb") as f:
+                    f.write(img_resp.content)
                 return True, f"OK (model={model})"
             except Exception as e:
                 return False, f"download failed: {e}"
@@ -367,7 +377,9 @@ def call_dalle(api_key, prompt, output_path, width=1080, height=1080):
             model="dall-e-3", prompt=prompt,
             size="1024x1024", quality="hd", n=1,
         )
-        urllib.request.urlretrieve(response.data[0].url, output_path)
+        img_resp = requests.get(response.data[0].url, impersonate="chrome", timeout=30)
+        with open(output_path, "wb") as f:
+            f.write(img_resp.content)
         try:
             from PIL import Image
             img = Image.open(output_path)
@@ -456,7 +468,6 @@ def main():
     ok = False
     reason = ""
 
-    # ── Dreamina API ────────────────────────────────────────────
     if sessions:
         print(f"\nRegion: {region}")
         print(f"Sessions: {len(sessions)} loaded")
@@ -469,7 +480,7 @@ def main():
             actual_region = region or r
             for model in MODEL_CHAIN:
                 print(f"  trying model={model} token={token[:12]}... region={actual_region}")
-                print(f"  calling Dreamina API directly...")
+                print(f"  calling Dreamina API (curl_cffi chrome)...")
                 ok, reason = call_dreamina(enriched, str(output_path), token, model=model, region=actual_region)
                 if ok:
                     print(f"  ✓ {reason}")
@@ -480,7 +491,6 @@ def main():
     else:
         print("\nNo Dreamina config. config/cookies.json not found or empty.")
 
-    # ── Fallback: DALL-E ────────────────────────────────────────
     if not ok:
         api_key = os.environ.get("OPENAI_API_KEY")
         if api_key:
@@ -489,7 +499,6 @@ def main():
             if ok:
                 print(f"  ✓ {reason}")
 
-    # ── Final fallback: placeholder ─────────────────────────────
     if not ok:
         print("  fallback → placeholder gradient")
         ok, reason = generate_placeholder(str(output_path), args.width, args.height, args.tier)
