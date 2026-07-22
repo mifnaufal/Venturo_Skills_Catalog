@@ -11,11 +11,29 @@ Your job: produce **WhatsApp Business catalog images** by (1) interviewing the u
 
 **You do NOT use AI image generation (Dreamina/DALL-E/Midjourney).** All visual elements are drawn programmatically using Python Pillow — shapes, colors, typography, and layout. This gives precise brand control and instant rendering (<1s).
 
+## Design System (Venturo Brand)
+
+The design MUST match venturo.id brand identity:
+
+| Element | Spec |
+|---------|------|
+| **Primary** | `#006D79` (teal) |
+| **Primary Light** | `#009BAD` |
+| **Dark** | `#202020` (footer/dark sections) |
+| **Light BG** | `#F6F8F8` (card backgrounds) |
+| **Heading** | `#292929` (bold, 600–800 weight) |
+| **Body** | `#4B5563` |
+| **Background** | `#FFFFFF` |
+| **Font style** | Montserrat / DejaVu Sans Bold |
+| **CTA shape** | Pill (fully rounded) |
+| **Card radius** | 10–12px |
+| **Header** | White bar with VENTURO logo + "Hubungi Kami" pill |
+
 ## Output Specs
 
 - **Size:** 1080 x 1440 px (3:4 portrait) — WhatsApp Business catalog standard
 - **Format:** PNG
-- **Design pattern:** Discount catalogue with alternating product layout, green accent palette, dot patterns, organic blobs, dark footer bar. See `templates/packages_context.md` for Venturo-specific data.
+- **Design pattern:** Venturo-branded software service catalog with hero section, stat counters, package cards (Starter/Growth/Enterprise), and dark footer.
 
 ## Workflow (mandatory — follow in order)
 
@@ -43,17 +61,52 @@ After the interview, read `templates/packages_context.md` to enrich the design w
 
 ### Phase 3: Design Illustration Generation
 
-Run `scripts/generate_design.py` from the plugin root. This renders the full catalog design programmatically using Pillow — no AI image generation involved.
+Run `scripts/generate_design.py` from the plugin root. This renders the full catalog design programmatically using Pillow — no AI image generation involved. The default spec produces a **Venturo-branded design** matching venturo.id.
 
-The script accepts a **JSON design spec** that defines every visual element. Use the default built-in spec (discount catalogue layout) or pass a custom spec via `--spec` / `--spec-file`.
+**Default spec output (Venturo brand):**
 
-**Default spec output:**
-- 1080x1440 (3:4) white canvas
-- Green accent palette (#7CB518)
-- Header with alternating color title + green pentagon discount badge
-- Pink sub-header banner ("CREATE YOUR DESIGN TODAY")
-- 3 alternating product sections (left/right/left) with organic blobs, dot patterns, product placeholders, name, price, description
-- Dark footer with CTA button, contact info, website info
+```
+┌─────────────────────────────────────┐
+│  VENTURO           [Hubungi Kami]   │  ← White header bar, teal pill CTA
+│  Software House Malang              │
+├─────────────────────────────────────┤
+│  Software House                     │
+│  Malang dengan Talenta              │
+│  Programmer Terbesar                │  ← Hero section
+│  130+ talenta programmer            │
+│  [50% OFF hiring fee]               │  ← Teal badge
+│                                      │
+│  130+               100+             │  ← Stat counters
+│  Dedicated IT       Successful      │
+│  Experts            Projects        │
+├─────────────────────────────────────┤
+│  ┌──────────────────────────────┐   │
+│  │ [icon] STARTER               │   │  ← Package cards
+│  │        Starter Package       │   │     (#F6F8F8 bg, teal accent bar)
+│  │        Rp20 Juta – Rp80 Juta │   │
+│  │        desc...               │   │
+│  │        • Website/Mobile App  │   │
+│  └──────────────────────────────┘   │
+│  ┌──────────────────────────────┐   │
+│  │ [icon] GROWTH                │   │
+│  │        Growth Package        │   │
+│  │        Rp80 Juta – Rp250 Juta│   │
+│  │        desc...               │   │
+│  │        • Finance/HRIS/CRM    │   │
+│  └──────────────────────────────┘   │
+│  ┌──────────────────────────────┐   │
+│  │ [icon] ENTERPRISE            │   │
+│  │        Enterprise Package    │   │
+│  │        Mulai Rp250 Juta      │   │
+│  │        desc...               │   │
+│  │        • AI & Big Data       │   │
+│  └──────────────────────────────┘   │
+├─────────────────────────────────────┤
+│  [Hubungi Kami]  Kontak    Website  │  ← Dark footer (#202020)
+│                   0812...  venturo..│
+│  © 2026 - The Biggest Programmer... │
+└─────────────────────────────────────┘
+```
 
 **Basic usage (built-in spec):**
 ```bash
