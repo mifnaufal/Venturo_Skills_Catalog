@@ -11,7 +11,6 @@ from playwright.sync_api import sync_playwright
 
 PLUGIN_ROOT = Path(__file__).resolve().parent.parent
 
-# ── Config ─────────────────────────────────────────────────────
 
 def load_config():
     cfg_path = PLUGIN_ROOT / "config" / "cookies.json"
@@ -53,9 +52,7 @@ def parse_region(raw):
     return "sg", raw
 
 
-# ── Playwright generation ──────────────────────────────────────
-
-def generate_via_playwright(prompt, output_path, session_token, region="sg"):
+def generate_via_playwright(prompt, output_path, session_token, region="sg", reference_path=None):
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         context = browser.new_context(
@@ -64,7 +61,6 @@ def generate_via_playwright(prompt, output_path, session_token, region="sg"):
             locale="zh-CN",
         )
 
-        # Inject session cookies
         context.add_cookies([
             {"name": "sessionid", "value": session_token, "domain": ".capcut.com", "path": "/"},
             {"name": "sessionid_ss", "value": session_token, "domain": ".capcut.com", "path": "/"},
@@ -73,18 +69,32 @@ def generate_via_playwright(prompt, output_path, session_token, region="sg"):
         ])
 
         page = context.new_page()
-        page.goto("https://dreamina.capcut.com/ai-tool/generate/?type=image&workspace=0",
+        page.goto("https://dreamina.capcut.com/ai-tool/home",
                   wait_until="networkidle", timeout=30000)
         page.wait_for_timeout(3000)
 
-        # Dismiss any initial dialog (upsell, etc.)
         _dismiss_dialogs(page)
 
+        # ── Upload reference image ──
+        if reference_path:
+            ref_abs = str(Path(reference_path).resolve())
+            if not Path(ref_abs).exists():
+                print(f"  reference file not found: {ref_abs}")
+            else:
+                print(f"  uploading reference: {ref_abs}")
+                uploaded = _upload_reference(page, ref_abs)
+                if uploaded:
+                    print(f"  ✓ reference uploaded")
+                else:
+                    print(f"  ✗ reference upload failed (skipped)")
+
+        page.wait_for_timeout(1000)
+
         # ── Fill prompt into TipTap editor ──
-        editor = page.evaluate("""
-            () => document.querySelector('.tiptap')
+        editor_ok = page.evaluate("""
+            () => !!document.querySelector('.tiptap')
         """)
-        if not editor:
+        if not editor_ok:
             return False, "editor not found"
         page.evaluate("""
             (prompt) => {
@@ -96,8 +106,7 @@ def generate_via_playwright(prompt, output_path, session_token, region="sg"):
                     } else {
                         el.innerHTML = '<p>' + prompt.replace(/\\n/g, '<br>') + '</p>';
                     }
-                    const event = new Event('input', {bubbles: true});
-                    el.dispatchEvent(event);
+                    el.dispatchEvent(new Event('input', {bubbles: true}));
                 }
             }
         """, prompt)
@@ -149,8 +158,6 @@ def generate_via_playwright(prompt, output_path, session_token, region="sg"):
             return False, "Generate button not found or disabled"
 
         page.wait_for_timeout(2000)
-
-        # ── Dismiss any post-click dialogs ──
         _dismiss_dialogs(page)
 
         # ── Wait for result ──
@@ -161,6 +168,47 @@ def generate_via_playwright(prompt, output_path, session_token, region="sg"):
 
         browser.close()
         return ok, reason
+
+
+def _upload_reference(page, filepath):
+    try:
+        file_input = page.query_selector('input[type="file"]')
+        if file_input:
+            file_input.set_input_files(filepath)
+            page.wait_for_timeout(2000)
+            return True
+
+        btns = page.query_selector_all("button")
+        for btn in btns:
+            text = (btn.inner_text() or "").lower()
+            if "image" in text or "upload" in text or "referen" in text:
+                with page.expect_file_chooser() as fc_info:
+                    btn.click()
+                file_chooser = fc_info.value
+                file_chooser.set_files(filepath)
+                page.wait_for_timeout(2000)
+                return True
+
+        page.evaluate("""
+            () => {
+                const inp = document.createElement('input');
+                inp.type = 'file';
+                inp.accept = 'image/*';
+                inp.style.display = 'none';
+                document.body.appendChild(inp);
+                inp.click();
+            }
+        """)
+        with page.expect_file_chooser() as fc_info:
+            page.evaluate("() => document.body.querySelector('input[type=\"file\"]').click()")
+        file_chooser = fc_info.value
+        file_chooser.set_files(filepath)
+        page.wait_for_timeout(2000)
+        return True
+
+    except Exception as e:
+        print(f"  upload error: {e}")
+        return False
 
 
 def _dismiss_dialogs(page):
@@ -179,22 +227,39 @@ def _wait_for_result(page, output_path, timeout=180):
         page.wait_for_timeout(3000)
         _dismiss_dialogs(page)
 
-        img_url = page.evaluate("""
+        result = page.evaluate("""
             () => {
                 const imgs = document.querySelectorAll('img');
+                let best = null;
+                let bestArea = 0;
                 for (const img of imgs) {
-                    if (img.src && img.src.includes('ibyteimg.com') && img.naturalWidth > 100) return img.src;
-                    if (img.src && img.src.includes('capcut') && img.naturalWidth > 100) return img.src;
-                    if (img.src && img.src.includes('dreamina') && img.naturalWidth > 100) return img.src;
+                    const src = (img.src || '').toLowerCase();
+                    if (!src) continue;
+                    if (src.includes('avatar')) continue;
+                    if (src.includes('icon')) continue;
+                    const w = img.naturalWidth || 0;
+                    const h = img.naturalHeight || 0;
+                    const area = w * h;
+                    if (area > 50000 && area > bestArea &&
+                        (src.includes('ibyteimg.com') || src.includes('capcut') || src.includes('dreamina'))) {
+                        best = img.src;
+                        bestArea = area;
+                    }
                 }
-                return null;
+                return best;
             }
         """)
-        if img_url:
+        if result:
             try:
-                resp = page.goto(img_url, wait_until="networkidle", timeout=15000)
-                if resp and resp.ok:
-                    page.screenshot(path=output_path, full_page=False)
+                import requests
+                headers = {
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/142.0.0.0 Safari/537.36",
+                    "Referer": "https://dreamina.capcut.com/",
+                }
+                resp = requests.get(result, headers=headers, timeout=30)
+                if resp.status_code == 200:
+                    with open(output_path, "wb") as f:
+                        f.write(resp.content)
                     _ensure_png(output_path)
                     return True, "OK"
             except Exception:
@@ -215,8 +280,6 @@ def _ensure_png(path):
     except ImportError:
         pass
 
-
-# ── Fallback: placeholder ──────────────────────────────────────
 
 def generate_placeholder(output_path, width=1080, height=1080, tier="starter"):
     try:
@@ -267,8 +330,6 @@ def generate_placeholder(output_path, width=1080, height=1080, tier="starter"):
     return True, "OK (placeholder)"
 
 
-# ── Main ───────────────────────────────────────────────────────
-
 def main():
     parser = argparse.ArgumentParser(description="Generate Venturo catalog background via Dreamina browser automation")
     parser.add_argument("--prompt", required=True)
@@ -279,6 +340,8 @@ def main():
     parser.add_argument("--aesthetics", default="modern UI design")
     parser.add_argument("--lighting", default="professional studio lighting")
     parser.add_argument("--bg-tone", default="dark cybertech")
+    parser.add_argument("--reference", default=None,
+                        help="Path to reference image (e.g. assets/image_1c155d.png) to upload before generation")
     args = parser.parse_args()
 
     output_path = Path(args.output)
@@ -295,7 +358,6 @@ def main():
     ok = False
     reason = ""
 
-    # ── Playwright Dreamina ─────────────────────────────────────
     if sessions:
         print(f"\nRegion: {region}")
         print(f"Sessions: {len(sessions)} loaded")
@@ -308,7 +370,7 @@ def main():
             print(f"\nLaunching browser...")
             print(f"  session={token[:12]}... region={region or r}")
             try:
-                ok, reason = generate_via_playwright(enriched, str(output_path), token, region or r)
+                ok, reason = generate_via_playwright(enriched, str(output_path), token, region or r, args.reference)
             except Exception as e:
                 reason = f"exception: {e}"
                 ok = False
@@ -319,7 +381,6 @@ def main():
     else:
         print("\nNo Dreamina config. config/cookies.json not found or empty.")
 
-    # ── Fallback: placeholder ───────────────────────────────────
     if not ok:
         print("  fallback → placeholder gradient")
         ok, reason = generate_placeholder(str(output_path), args.width, args.height, args.tier)
