@@ -5,9 +5,9 @@ description: Generate WhatsApp Business catalog images for Venturo's software de
 
 # Venturo WhatsApp Business Catalog Generator
 
-Generate **WhatsApp Business catalog images** for Venturo — an Indonesian software development company — using **Dreamina AI** via Playwright (manual login).
+Generate **WhatsApp Business catalog images** for Venturo — an Indonesian software development company — using **Dreamina AI** via Playwright MCP browser automation.
 
-**Engine:** Dreamina AI (online, via Playwright browser automation)
+**Engine:** Dreamina AI (online, via Playwright MCP browser automation)
 
 ## Design System (Venturo Brand)
 
@@ -37,6 +37,44 @@ Generate **WhatsApp Business catalog images** for Venturo — an Indonesian soft
 | **Growth** | Rp80 Juta – Rp250 Juta | Finance, HRIS, CRM, ERP, Inventory, WMS |
 | **Enterprise** | Mulai Rp250 Juta | AI, Big Data, cybersecurity, integrasi lintas sistem |
 
+## Prerequisites (AI Agent)
+
+Sebelum memulai generation, pastikan:
+
+1. **MCP server `venturo-poster-playwright` sudah terdaftar** di Antigravity config:
+   ```json
+   {
+     "mcpServers": {
+       "venturo-poster-playwright": {
+         "command": "python3",
+         "args": ["<plugin_path>/mcp-playwright/server.py"],
+         "env": {}
+       }
+     }
+   }
+   ```
+2. **Dependencies sudah terinstall** (`pip install -r <plugin_path>/mcp-playwright/requirements.txt`)
+3. **Chromium sudah terinstall** (`playwright install chromium`)
+
+## Available MCP Tools
+
+| Tool | Description |
+|------|-------------|
+| `browser_start` | Launch Chromium browser |
+| `browser_stop` | Close browser and cleanup |
+| `browser_navigate(url)` | Go to a URL |
+| `browser_click(selector)` | Click first visible element matching CSS selector |
+| `browser_fill(selector, text)` | Fill an input/textarea with text |
+| `browser_upload_file(file_path)` | Upload file via file input |
+| `browser_screenshot(output_path)` | Take full-page screenshot |
+| `browser_wait(duration_ms)` | Wait for N milliseconds |
+| `browser_wait_for_url(pattern, timeout_ms)` | Wait until URL matches regex |
+| `browser_evaluate(script)` | Run JavaScript in page |
+| `dreamina_login(email, password)` | Login to Dreamina with email (NOT Google). Multi-fallback selectors. |
+| `dreamina_upload_reference()` | Upload Venturo logo as reference image. Multi-fallback. |
+| `dreamina_fill_prompt(prompt)` | Fill Dreamina prompt textarea. Multi-fallback. |
+| `dreamina_click_generate()` | Click "Generate" button. Multi-fallback. |
+
 ## Workflow (mandatory — follow in order)
 
 ### Phase 1: Art Director Interview
@@ -52,7 +90,7 @@ Frame questions in **Bahasa Indonesia**. Show you understand their business cont
 
 ### Phase 2: Build Detailed Prompt
 
-Read `templates/packages_context.md` and `scripts/generate_base.py` (see `build_prompt()` function) to understand the prompt structure.
+Read `templates/packages_context.md` for tier-specific themes and sales copy.
 
 Generate a **long, detailed Dreamina prompt** in Bahasa Indonesia. The prompt MUST follow this structure and include ALL sections:
 
@@ -109,33 +147,74 @@ Tampilkan **full prompt** yang akan dikirim ke Dreamina, plus reference images:
 
 Wait for explicit "lanjut" / "yes" / "setuju" before proceeding.
 
-### Phase 5: Generation via Dreamina
+### Phase 5: Generation via Playwright MCP
 
-Write the full prompt (from Phase 2/3) to a temporary file, then run:
+1. Minta user input Dreamina **email & password** (login via email, BUKAN Google).
+   Gunakan environment variable `DREAMINA_EMAIL` dan `DREAMINA_PASSWORD` jika tersedia.
 
-```bash
-cat > /tmp/venturo_prompt_starter.txt << 'PROMPT_EOF'
-{full prompt dari Phase 2 — jangan dipotong, tulis LENGKAP}
-PROMPT_EOF
+2. Panggil MCP tools secara berurutan:
 
-python3 venturo-poster/scripts/generate_base.py \
-  --tier starter \
-  --prompt-file /tmp/venturo_prompt_starter.txt
-```
-*(Run from `Venturo_Skills_Catalog/` directory)*
+   **Step 1 — Start browser:**
+   ```
+   browser_start(headless=false)
+   ```
+   Jika gagal: "Gagal launch browser. Pastikan Chromium sudah terinstall."
 
-The script:
-1. Prompts for Dreamina email & password in terminal
-2. Launches Chromium with `headless=false` — browser window appears
-3. Navigates to Dreamina — **auto-fills email & password**, clicks Sign in
-4. If auto-login fails, falls back to manual login
-5. After login, navigates to AI image generation page
-6. Uploads `assets/image_1c155d.png` as reference image (auto, with fallback to manual)
-7. Fills the prompt text from the file (auto, with fallback to manual)
-8. Waits for generation to complete
-9. Saves screenshot as `output/dreamina_<tier>.png`
+   **Step 2 — Navigate to login page:**
+   ```
+   browser_navigate("https://dreamina.capcut.com/ai-tool/home?need_login=true&type=image&workspace=0")
+   ```
+   Jika gagal: coba `browser_navigate("https://dreamina.capcut.com/")` lalu cari tombol sign in manual.
 
-> **CRITICAL:** Kirim prompt LENGKAP ke Dreamina. Jangan dipotong/diringkas. Semua section (Masalah, Solusi, Hasil, Visual Themes, Brand, Design Rules, preferensi user) harus masuk semua ke prompt.
+   **Step 3 — Login to Dreamina (email only, NOT Google):**
+   ```
+   dreamina_login(email, password)
+   ```
+   Tool ini akan auto-fill email & password form dan submit.
+   Jika gagal: "Auto-login gagal. Silakan login manual di browser, lalu beri tahu saya setelah selesai." Lanjut ke step 4 setelah user konfirmasi.
+
+   **Step 4 — Navigate to AI image tool:**
+   ```
+   browser_navigate("https://dreamina.capcut.com/ai-tool/image")
+   browser_wait(3000)
+   ```
+
+   **Step 5 — Upload logo reference:**
+   ```
+   dreamina_upload_reference()
+   ```
+   Jika gagal: minta user upload logo manual dari `assets/image_1c155d.png`, lalu `browser_wait(30000)`.
+
+   **Step 6 — Fill prompt:**
+   ```
+   dreamina_fill_prompt("{full prompt dari Phase 2/3 — LENGKAP, jangan dipotong}")
+   ```
+   Jika gagal: "Tolong paste prompt ini ke Dreamina: {prompt}"
+   Lalu `browser_wait(30000)`.
+
+   **Step 7 — Click Generate:**
+   ```
+   dreamina_click_generate()
+   ```
+   Jika gagal: "Tolong klik tombol Generate di browser."
+
+   **Step 8 — Wait for generation:**
+   ```
+   browser_wait(180000)
+   ```
+   Tunggu ±3 menit. Jika user merasa sudah selesai, bisa lanjut lebih cepat.
+
+   **Step 9 — Screenshot:**
+   ```
+   browser_screenshot("venturo-poster/output/dreamina_{tier}.png")
+   ```
+
+   **Step 10 — Cleanup:**
+   ```
+   browser_stop()
+   ```
+
+> **CRITICAL:** Kirim prompt LENGKAP ke Dreamina via `dreamina_fill_prompt`. Jangan dipotong/diringkas. Semua section (Masalah, Solusi, Hasil, Visual Themes, Brand, Design Rules, preferensi user) harus masuk semua ke prompt.
 
 ### Phase 6: Delivery
 
@@ -144,7 +223,7 @@ The script:
   venturo-poster/output/dreamina_starter.png
 
   Resolusi: 1:1 square (Dreamina)
-  Engine: Dreamina AI (Playwright auto-login)
+  Engine: Dreamina AI (Playwright MCP)
   Logo: AI-composited from reference image
 ```
 
@@ -156,9 +235,27 @@ The script:
 - **Do NOT use Pillow or other local rendering.** The Dreamina AI engine handles ALL visual generation.
 - **Always** include the Venturo logo reference in the prompt instructions.
 - **Always use Bahasa Indonesia** untuk konten catalog.
-- **Auto-login** — script prompts for email & password and fills the Dreamina login form. Falls back to manual if auto-login fails.
-- **Use `--manual-login` flag** to skip auto-login and log in manually.
+- **Login via email, NOT Google.** Jangan klik tombol Google login. Gunakan `dreamina_login()` yang sudah auto-fill email + password.
 - **Prompt harus LENGKAP & DETAIL.** Jangan pernah menyingkat atau meringkas prompt. Semua section (Masalah, Solusi, Hasil, Visual Themes, Brand, Design Rules) + preferensi user harus masuk semua. Jika user request spesifik (warna, layout, teks), incorporate ke dalam prompt.
+- **Jika MCP tool gagal**, coba sekali lagi. Jika tetap gagal, minta user melakukan step tersebut manual di browser.
+
+## MCP Server Configuration
+
+Tambahkan MCP server ini ke Antigravity config (`~/.gemini/config/antigravity.json` atau sesuai setup):
+
+```json
+{
+  "mcpServers": {
+    "venturo-poster-playwright": {
+      "command": "python3",
+      "args": ["<absolute_path>/mcp-playwright/server.py"],
+      "env": {}
+    }
+  }
+}
+```
+
+Ganti `<absolute_path>` dengan path lengkap ke `venturo-poster/mcp-playwright/server.py`.
 
 ## File Reference
 
@@ -167,6 +264,7 @@ The script:
 | `plugin.json` | Plugin manifest |
 | `skills/venturo-poster/SKILL.md` | This skill definition |
 | `assets/image_1c155d.png` | Official Venturo logo (uploaded as reference to Dreamina) |
-| `scripts/generate_base.py` | Dreamina AI generation via Playwright (manual login + logo reference upload) |
+| `mcp-playwright/server.py` | Playwright MCP server — browser automation tools |
+| `mcp-playwright/requirements.txt` | Python dependencies for MCP server |
 | `templates/packages_context.md` | Venturo service tier reference with sales copy |
 | `output/` | Generated catalog images |

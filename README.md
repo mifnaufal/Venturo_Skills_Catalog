@@ -1,18 +1,19 @@
 # Venturo WhatsApp Business Catalog — Antigravity Plugin
 
-Generate **WhatsApp Business catalog images** for Venturo's software development packages using **Dreamina AI** (via Playwright browser automation). Logo Venturo diupload sebagai reference image, AI composite otomatis.
+Generate **WhatsApp Business catalog images** for Venturo's software development packages using **Dreamina AI** (via Playwright MCP browser automation). Logo Venturo diupload sebagai reference image, AI composite otomatis.
 
 ## Prerequisites
 
 - Python 3.8+
-- Playwright: `pip install playwright && playwright install chromium`
+- Playwright + Chromium: `pip install -r venturo-poster/mcp-playwright/requirements.txt && playwright install chromium`
 
 ## Install
 
 ```bash
-git clone https://github.com/<username>/venturo-catalog-plugin.git
+git clone <repo-url>
 cd Venturo_Skills_Catalog
-pip install playwright && playwright install chromium
+pip install -r venturo-poster/mcp-playwright/requirements.txt
+playwright install chromium
 ./install.sh
 ```
 
@@ -21,38 +22,36 @@ pip install playwright && playwright install chromium
 .\install.ps1
 ```
 
-## Quick Start
+## Cara Pakai via Antigravity CLI
 
 ```bash
-# Generate satu paket (akan diminta email & password Dreamina)
-python3 venturo-poster/scripts/generate_base.py --tier starter
-
-# Manual login (skip auto-login)
-python3 venturo-poster/scripts/generate_base.py --tier starter --manual-login
-
-# Generate semua paket sekaligus
-python3 venturo-poster/scripts/generate_base.py --tier all
-
-# Custom prompt
-python3 venturo-poster/scripts/generate_base.py \
-  --tier growth \
-  --prompt "Buat katalog WhatsApp untuk Venturo Growth Package dengan tema profesional"
-
-# Custom output
-python3 venturo-poster/scripts/generate_base.py \
-  --tier enterprise \
-  --output venturo-poster/output/katalog_enterprise.png
+agy
+# lalu ketik: /venturo-poster
+# atau:      buat katalog WhatsApp buat Venturo
 ```
 
-## Cara Kerja
+AI agent akan:
+1. Wawancara user (tier, preferensi desain, konten custom)
+2. Bangun prompt detail untuk Dreamina
+3. Tampilkan preview spec untuk approval
+4. Jalankan Playwright MCP untuk login, upload logo, generate, screenshot
+5. Kirim hasil ke user
 
-1. Script membuka Chromium (non-headless) ke Dreamina
-2. **Login manual** — user login ke akun ByteDance/Dreamina
-3. **Auto-fill email & password** (atau login manual dengan `--manual-login`)
-4. Script upload `assets/image_1c155d.png` (logo Venturo) sebagai reference image
-5. Script isi prompt text otomatis (dengan fallback manual)
-6. AI generate gambar katalog dengan logo Venturo sudah ter-composite
-7. Hasil disimpan ke `output/dreamina_<tier>.png`
+## MCP Server Configuration
+
+Daftarkan MCP server di Antigravity config (`~/.gemini/config/antigravity.json`):
+
+```json
+{
+  "mcpServers": {
+    "venturo-poster-playwright": {
+      "command": "python3",
+      "args": ["<absolute_path>/mcp-playwright/server.py"],
+      "env": {}
+    }
+  }
+}
+```
 
 ## Package Tiers
 
@@ -66,15 +65,16 @@ python3 venturo-poster/scripts/generate_base.py \
 
 ```
 venturo-poster/
-├── plugin.json
-├── skills/venturo-poster/SKILL.md
-├── assets/image_1c155d.png          # Venturo logo (reference untuk AI)
-├── scripts/
-│   └── generate_base.py             # Dreamina AI + Playwright auto-login
-├── templates/packages_context.md    # Service tier reference
-├── output/                          # Generated images
-├── install.sh
-├── install.ps1
+├── plugin.json                       # Plugin manifest
+├── skills/venturo-poster/SKILL.md    # AI agent skill definition
+├── assets/image_1c155d.png           # Venturo logo (reference untuk AI)
+├── mcp-playwright/
+│   ├── server.py                     # Playwright MCP server
+│   └── requirements.txt              # Python dependencies
+├── templates/packages_context.md     # Service tier reference
+├── output/                           # Generated images
+├── install.sh                        # Linux/macOS installer
+├── install.ps1                       # Windows PowerShell installer
 └── README.md
 ```
 

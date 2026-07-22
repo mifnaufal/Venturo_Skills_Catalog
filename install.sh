@@ -16,7 +16,21 @@ echo -e "${CYAN}  Venturo Poster — Antigravity Plugin Install${NC}"
 echo -e "${CYAN}============================================${NC}"
 echo ""
 
-# 1. Validate
+# 1. Validate dependencies
+if ! command -v python3 &>/dev/null; then
+    echo -e "${RED}ERROR: Python 3 not found. Install Python 3.8+ first.${NC}"
+    exit 1
+fi
+
+PY_VERSION=$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')
+if python3 -c "import sys; sys.exit(0 if sys.version_info >= (3, 8) else 1)" 2>/dev/null; then
+    echo -e "  Python ${PY_VERSION} — OK"
+else
+    echo -e "${RED}ERROR: Python 3.8+ required (found ${PY_VERSION})${NC}"
+    exit 1
+fi
+
+# 2. Validate plugin files
 if [ ! -f "$PLUGIN_SRC/plugin.json" ]; then
     echo -e "${RED}ERROR: venturo-poster/plugin.json not found${NC}"
     exit 1
@@ -25,35 +39,62 @@ if [ ! -f "$PLUGIN_SRC/assets/image_1c155d.png" ]; then
     echo -e "${RED}ERROR: assets/image_1c155d.png not found${NC}"
     exit 1
 fi
+if [ ! -f "$PLUGIN_SRC/mcp-playwright/requirements.txt" ]; then
+    echo -e "${RED}ERROR: mcp-playwright/requirements.txt not found${NC}"
+    exit 1
+fi
 
-# 2. Remove stale plugin
+# 3. Remove stale plugin directories
 for dir in "$PLUGIN_DIR" "$PLUGIN_DIR_CLI"; do
     if [ -d "$dir" ]; then
-        echo "Removing old plugin from $dir..."
+        echo "  Removing old plugin from $dir..."
         rm -rf "$dir"
     fi
 done
 
-# 3. Copy fresh plugin
+# 4. Copy fresh plugin
 cp -r "$PLUGIN_SRC" "$PLUGIN_DIR"
 cp -r "$PLUGIN_SRC" "$PLUGIN_DIR_CLI"
 echo -e "${GREEN}✔ Plugin copied to${NC}"
 echo -e "${GREEN}  • $PLUGIN_DIR${NC}"
 echo -e "${GREEN}  • $PLUGIN_DIR_CLI${NC}"
 
-# 4. Install Playwright
+# 5. Install MCP + Playwright dependencies
 echo ""
-echo "Installing Python dependencies..."
-pip3 install playwright 2>/dev/null || pip install playwright 2>/dev/null || true
+echo "  Installing Python dependencies..."
+pip3 install -r "$PLUGIN_SRC/mcp-playwright/requirements.txt" || pip install -r "$PLUGIN_SRC/mcp-playwright/requirements.txt"
+echo -e "${GREEN}✔ Python dependencies installed${NC}"
+
+# 6. Install Chromium
+echo ""
+echo "  Installing Chromium browser..."
 if python3 -c "from playwright.sync_api import sync_playwright; print('OK')" 2>/dev/null; then
     echo -e "${GREEN}✔ Playwright ready${NC}"
 else
-    echo "Installing Playwright browsers..."
-    python3 -m playwright install chromium 2>/dev/null || echo -e "${RED}Run: playwright install chromium${NC}"
+    playwright install chromium 2>/dev/null || python3 -m playwright install chromium
+    echo -e "${GREEN}✔ Chromium installed${NC}"
 fi
 
-# 5. Done
+# 7. Show MCP config instructions
 echo ""
+echo -e "${CYAN}============================================${NC}"
+echo -e "${CYAN}  MCP Server Configuration${NC}"
+echo -e "${CYAN}============================================${NC}"
+echo ""
+echo "  Tambahkan ke Antigravity config (~/.gemini/config/antigravity.json):"
+echo ""
+echo '  {'
+echo '    "mcpServers": {'
+echo '      "venturo-poster-playwright": {'
+echo '        "command": "python3",'
+echo '        "args": ["'$(realpath "$PLUGIN_SRC/mcp-playwright/server.py")'"],'
+echo '        "env": {}'
+echo '      }'
+echo '    }'
+echo '  }'
+echo ""
+
+# 8. Done
 echo -e "${GREEN}✔ Venturo Poster — siap digunakan!${NC}"
 echo ""
 echo "Cara pakai:"

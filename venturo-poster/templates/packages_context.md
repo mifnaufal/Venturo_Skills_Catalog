@@ -108,9 +108,10 @@ Use these to enrich AI image prompts based on the user's chosen tier.
 
 | Color | Hex | Usage |
 |-------|-----|-------|
-| Cyan / Teal | `#06b6d4` | Primary brand accent |
-| Emerald Green | `#10b981` | Secondary brand accent |
-| Dark Background | `#0f172a` | Dark mode backgrounds |
-| Slate Gray | `#1e293b` | Card / surface backgrounds |
-| White | `#f8fafc` | Primary text on dark |
-| Cyan Glow | `rgba(6, 182, 212, 0.3)` | Glow effects |
+| Primary Teal | `#006D79` | Brand primary |
+| Primary Light | `#009BAD` | Brand secondary |
+| Dark | `#202020` | Dark mode / headings |
+| Light BG | `#F6F8F8` | Light backgrounds |
+| Heading | `#292929` | Heading text |
+| Body Text | `#4B5563` | Body text |
+| Background | `#FFFFFF` | Page background |
