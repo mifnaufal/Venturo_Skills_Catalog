@@ -50,22 +50,59 @@ Generate **WhatsApp Business catalog images** for Venturo — an Indonesian soft
 
 Frame questions in **Bahasa Indonesia**. Show you understand their business context.
 
-### Phase 2: Context Enrichment
+### Phase 2: Build Detailed Prompt
 
-Read `templates/packages_context.md` to enrich the AI prompt with Venturo-specific data:
+Read `templates/packages_context.md` and `scripts/generate_base.py` (see `build_prompt()` function) to understand the prompt structure.
 
-| Tier | Themes to emphasize |
-|------|-------------------|
-| Starter | Clean storefronts, modern mobile UIs, 2-person team, minimalist |
-| Growth | ERP/CRM/HRIS dashboards, multi-device, 4-person team |
-| Enterprise | Data centers, AI/Big Data, cybersecurity, 6-person team + pentest |
+Generate a **long, detailed Dreamina prompt** in Bahasa Indonesia. The prompt MUST follow this structure and include ALL sections:
+
+```
+Buat gambar katalog WhatsApp Business untuk paket {TIER}.
+
+VENTURO — Software House Malang
+Paket: {tier}
+Budget: {budget}
+Ideal untuk: {target_audience}
+Tim: {team_composition}
+
+MASALAH YANG DISELESAIKAN:
+- (dari templates/packages_context.md — sesuaikan dengan konteks tier)
+
+SOLUSI:
+- (dari templates/packages_context.md — sesuaikan dengan konteks tier)
+
+HASIL:
+- (dari templates/packages_context.md — sesuaikan dengan konteks tier)
+
+VISUAL THEMES:
+- (dari templates/packages_context.md — pilih yang sesuai tier)
+
+STYLE KEYWORDS: (dari templates/packages_context.md)
+
+BRAND & DESAIN:
+- Warna Primer: #006D79 (teal)
+- Warna Sekunder: #009BAD
+(include color palette lengkap)
+
+DESIGN RULES:
+- WhatsApp Business catalog image, square 1:1
+- Clean, professional, modern, minimal
+- Bahasa Indonesia
+- Logo Venturo dari referensi yang diupload
+- (include user preferences dari interview)
+```
+
+**Wajib incorporate hasil interview user:**
+- If user specified color preferences → tambahkan ke design rules
+- If user wanted specific layout/placement → tambahkan ke visual themes
+- If user has custom text/stats → sisipkan di konten
 
 ### Phase 3: Preview Spec (NO GENERATION)
 
-Show the prompt that will be sent to Dreamina, plus which reference images will be uploaded:
+Tampilkan **full prompt** yang akan dikirim ke Dreamina, plus reference images:
 
-1. The Venturo logo (`assets/image_1c155d.png`) — uploaded as reference, AI composites it naturally
-2. The prompt text (auto-generated from tier + packages_context.md)
+1. **Full prompt** (tampilkan LENGKAP, jangan dipotong)
+2. The Venturo logo (`assets/image_1c155d.png`) — uploaded as reference, AI composites it naturally
 3. **Ask for approval:** "Apakah spec ini sesuai? Saya akan generate via Dreamina dengan referensi logo Venturo. Lanjut?"
 
 ### Phase 4: User Approval
@@ -74,29 +111,29 @@ Wait for explicit "lanjut" / "yes" / "setuju" before proceeding.
 
 ### Phase 5: Generation via Dreamina
 
+Write the full prompt (from Phase 2/3) to a temporary file, then run:
+
 ```bash
-python3 venturo-poster/scripts/generate_base.py --tier starter
+cat > /tmp/venturo_prompt_starter.txt << 'PROMPT_EOF'
+{full prompt dari Phase 2 — jangan dipotong, tulis LENGKAP}
+PROMPT_EOF
+
+python3 venturo-poster/scripts/generate_base.py \
+  --tier starter \
+  --prompt-file /tmp/venturo_prompt_starter.txt
 ```
-*(Run from the directory where you cloned `Venturo_Skills_Catalog/`)*
+*(Run from `Venturo_Skills_Catalog/` directory)*
 
 The script:
 1. Launches Chromium with `headless=false` — browser window appears
 2. Navigates to Dreamina — **user logs in manually**
 3. After login, navigates to AI image generation page
 4. Uploads `assets/image_1c155d.png` as reference image (auto, with fallback to manual)
-5. Fills the prompt text (auto, with fallback to manual)
+5. Fills the prompt text from the file (auto, with fallback to manual)
 6. Waits for generation to complete
 7. Saves screenshot as `dreamina_<tier>.png`
 
-**Key flags:**
-| Flag | Description |
-|------|-------------|
-| `--tier starter|growth|enterprise|all` | Which tier(s) to generate |
-| `--prompt "custom"` | Override auto-generated prompt |
-| `--prompt-file path.txt` | Read prompt from file |
-| `--timeout 180000` | Max wait in ms (default 3 min) |
-| `--no-logo` | Skip logo reference upload |
-| `--output path.png` | Custom output path |
+> **CRITICAL:** Kirim prompt LENGKAP ke Dreamina. Jangan dipotong/diringkas. Semua section (Masalah, Solusi, Hasil, Visual Themes, Brand, Design Rules, preferensi user) harus masuk semua ke prompt.
 
 ### Phase 6: Delivery
 
@@ -118,6 +155,7 @@ The script:
 - **Always** include the Venturo logo reference in the prompt instructions.
 - **Always use Bahasa Indonesia** untuk konten catalog.
 - **Manual login required** — the user must log into Dreamina manually in the visible browser.
+- **Prompt harus LENGKAP & DETAIL.** Jangan pernah menyingkat atau meringkas prompt. Semua section (Masalah, Solusi, Hasil, Visual Themes, Brand, Design Rules) + preferensi user harus masuk semua. Jika user request spesifik (warna, layout, teks), incorporate ke dalam prompt.
 
 ## File Reference
 
