@@ -2,7 +2,7 @@ param()
 
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $PluginSrc = Join-Path $ScriptDir "venturo-poster"
-$PluginDir = "$env:USERPROFILE\.gemini\antigravity-cli\plugins\venturo-poster"
+$PluginDir = "$env:USERPROFILE\.gemini\config\plugins\venturo-poster"
 $Manifest  = Join-Path $PluginSrc "plugin.json"
 $LogoPath  = Join-Path $PluginSrc "assets\image_1c155d.png"
 
@@ -32,13 +32,8 @@ New-Item -ItemType Directory -Path (Split-Path $PluginDir -Parent) -Force | Out-
 Copy-Item -Recurse -Path $PluginSrc -Destination $PluginDir
 Write-Host "✔ Plugin copied to $PluginDir" -ForegroundColor Green
 
-# 4. Register via agy
+# 4. Install Playwright
 Write-Host ""
-Write-Host "Registering plugin..."
-$output = & agy plugin install "$PluginDir" 2>&1 | Out-String
-Write-Host $output
-
-# 5. Install Playwright
 Write-Host "Installing Python dependencies..."
 try {
     pip install playwright 2>&1 | Out-Null
@@ -53,7 +48,7 @@ try {
     Write-Host "Run: pip install playwright && playwright install chromium" -ForegroundColor Yellow
 }
 
-# 6. Done
+# 5. Done
 Write-Host ""
 Write-Host "✔ Venturo Poster — siap digunakan!" -ForegroundColor Green
 Write-Host ""

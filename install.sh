@@ -3,7 +3,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PLUGIN_SRC="$SCRIPT_DIR/venturo-poster"
-PLUGIN_DIR="$HOME/.gemini/antigravity-cli/plugins/venturo-poster"
+PLUGIN_DIR="$HOME/.gemini/config/plugins/venturo-poster"
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -25,24 +25,18 @@ if [ ! -f "$PLUGIN_SRC/assets/image_1c155d.png" ]; then
     exit 1
 fi
 
-# 2. Remove stale plugin if exists
+# 2. Remove stale plugin
 if [ -d "$PLUGIN_DIR" ]; then
     echo "Removing old plugin..."
     rm -rf "$PLUGIN_DIR"
 fi
 
 # 3. Copy fresh plugin
-mkdir -p "$(dirname "$PLUGIN_DIR")"
 cp -r "$PLUGIN_SRC" "$PLUGIN_DIR"
 echo -e "${GREEN}✔ Plugin copied to $PLUGIN_DIR${NC}"
 
-# 4. Register via agy
+# 4. Install Playwright
 echo ""
-echo "Registering plugin..."
-agy plugin install "$PLUGIN_DIR" 2>&1
-echo ""
-
-# 5. Install Playwright
 echo "Installing Python dependencies..."
 pip3 install playwright 2>/dev/null || pip install playwright 2>/dev/null || true
 if python3 -c "from playwright.sync_api import sync_playwright; print('OK')" 2>/dev/null; then
@@ -52,7 +46,7 @@ else
     python3 -m playwright install chromium 2>/dev/null || echo -e "${RED}Run: playwright install chromium${NC}"
 fi
 
-# 6. Done
+# 5. Done
 echo ""
 echo -e "${GREEN}✔ Venturo Poster — siap digunakan!${NC}"
 echo ""
