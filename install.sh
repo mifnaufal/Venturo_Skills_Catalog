@@ -1,16 +1,3 @@
-#!/usr/bin/env bash
-# ==========================================================================
-# Venturo Poster Plugin — Installer (Linux / macOS)
-# ==========================================================================
-# Installs as an Antigravity CLI plugin.
-# Usage:
-#   chmod +x install.sh
-#   ./install.sh                          # interactive
-#   ./install.sh --target plugin           # -> ~/.gemini/antigravity-cli/plugins/
-#   ./install.sh --target skill            # -> ~/.gemini/antigravity-cli/skills/
-#   ./install.sh --target ~/my/path        # custom
-# ==========================================================================
-
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

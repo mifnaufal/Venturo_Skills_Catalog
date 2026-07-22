@@ -1,14 +1,3 @@
-<#
-.SYNOPSIS
-    Venturo Poster Plugin — Installer (Windows / PowerShell)
-.DESCRIPTION
-    Installs venturo-poster as an Antigravity CLI plugin or standalone skill.
-.USAGE
-    .\install.ps1                         # interactive
-    .\install.ps1 -Target plugin          # -> ~\.gemini\antigravity-cli\plugins\
-    .\install.ps1 -Target skill           # -> ~\.gemini\antigravity-cli\skills\
-#>
-
 param(
     [string]$Target = ""
 )
