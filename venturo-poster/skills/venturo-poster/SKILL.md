@@ -125,13 +125,15 @@ python3 venturo-poster/scripts/generate_base.py \
 *(Run from `Venturo_Skills_Catalog/` directory)*
 
 The script:
-1. Launches Chromium with `headless=false` — browser window appears
-2. Navigates to Dreamina — **user logs in manually**
-3. After login, navigates to AI image generation page
-4. Uploads `assets/image_1c155d.png` as reference image (auto, with fallback to manual)
-5. Fills the prompt text from the file (auto, with fallback to manual)
-6. Waits for generation to complete
-7. Saves screenshot as `dreamina_<tier>.png`
+1. Prompts for Dreamina email & password in terminal
+2. Launches Chromium with `headless=false` — browser window appears
+3. Navigates to Dreamina — **auto-fills email & password**, clicks Sign in
+4. If auto-login fails, falls back to manual login
+5. After login, navigates to AI image generation page
+6. Uploads `assets/image_1c155d.png` as reference image (auto, with fallback to manual)
+7. Fills the prompt text from the file (auto, with fallback to manual)
+8. Waits for generation to complete
+9. Saves screenshot as `output/dreamina_<tier>.png`
 
 > **CRITICAL:** Kirim prompt LENGKAP ke Dreamina. Jangan dipotong/diringkas. Semua section (Masalah, Solusi, Hasil, Visual Themes, Brand, Design Rules, preferensi user) harus masuk semua ke prompt.
 
@@ -139,10 +141,10 @@ The script:
 
 ```
 ✔ Katalog berhasil dibuat! Tersimpan di:
-  dreamina_starter.png
+  venturo-poster/output/dreamina_starter.png
 
   Resolusi: 1:1 square (Dreamina)
-  Engine: Dreamina AI (Playwright manual login)
+  Engine: Dreamina AI (Playwright auto-login)
   Logo: AI-composited from reference image
 ```
 
@@ -154,7 +156,8 @@ The script:
 - **Do NOT use Pillow or other local rendering.** The Dreamina AI engine handles ALL visual generation.
 - **Always** include the Venturo logo reference in the prompt instructions.
 - **Always use Bahasa Indonesia** untuk konten catalog.
-- **Manual login required** — the user must log into Dreamina manually in the visible browser.
+- **Auto-login** — script prompts for email & password and fills the Dreamina login form. Falls back to manual if auto-login fails.
+- **Use `--manual-login` flag** to skip auto-login and log in manually.
 - **Prompt harus LENGKAP & DETAIL.** Jangan pernah menyingkat atau meringkas prompt. Semua section (Masalah, Solusi, Hasil, Visual Themes, Brand, Design Rules) + preferensi user harus masuk semua. Jika user request spesifik (warna, layout, teks), incorporate ke dalam prompt.
 
 ## File Reference

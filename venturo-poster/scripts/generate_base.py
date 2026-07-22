@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
+import getpass
 import os
 import re
 import sys
@@ -11,6 +12,7 @@ from pathlib import Path
 PLUGIN_ROOT = Path(__file__).resolve().parent.parent
 LOGO_PATH = PLUGIN_ROOT / "assets" / "image_1c155d.png"
 CONTEXT_PATH = PLUGIN_ROOT / "templates" / "packages_context.md"
+OUTPUT_DIR = PLUGIN_ROOT / "output"
 
 
 def load_context():
@@ -176,10 +178,169 @@ def try_upload_reference(page, logo_path):
 def resolve_output_path(tier_name, output_arg):
     if output_arg:
         return output_arg
-    return f"dreamina_{tier_name}.png"
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    return str(OUTPUT_DIR / f"dreamina_{tier_name}.png")
 
 
-def process_tier(browser, tier_name, output_path, prompt, timeout_ms):
+def prompt_credentials():
+    print("=" * 60)
+    print("  DREAMINA LOGIN CREDENTIALS")
+    print("=" * 60)
+    email = input("  Email: ").strip()
+    password = getpass.getpass("  Password: ").strip()
+    return email, password
+
+
+def auto_login(page, email, password):
+    print("\n" + "=" * 60)
+    print("  AUTO-LOGIN")
+    print("=" * 60)
+
+    sign_in_selectors = [
+        "button:has-text('Sign in')",
+        "button:has-text('Log in')",
+        "button:has-text('Login')",
+        "button:has-text('Masuk')",
+        "button:has-text('Sign In')",
+        "a:has-text('Sign in')",
+        "a:has-text('Log in')",
+        "span:has-text('Sign in')",
+        "div[class*='login'] button",
+        "div[class*='sign-in'] button",
+        "div[class*='signin'] button",
+    ]
+
+    clicked_signin = False
+    for sel in sign_in_selectors:
+        try:
+            btn = page.query_selector(sel)
+            if btn and btn.is_visible():
+                btn.click()
+                clicked_signin = True
+                print(f"  Clicked sign-in button: {sel}")
+                break
+        except Exception:
+            continue
+
+    if not clicked_signin:
+        print("  Could not find sign-in button. Trying to detect login form directly...")
+
+    page.wait_for_timeout(5000)
+
+    login_fields_found = False
+    current_url = page.url
+    print(f"  Current URL: {current_url}")
+
+    email_selectors = [
+        "input[type='email']",
+        "input[name='email']",
+        "input[name='account']",
+        "input[placeholder*='email']",
+        "input[placeholder*='Email']",
+        "input[placeholder*='Email']",
+        "input[placeholder*='account']",
+        "input[autocomplete='username']",
+        "input[autocomplete='email']",
+    ]
+
+    password_selectors = [
+        "input[type='password']",
+        "input[name='password']",
+        "input[placeholder*='password']",
+        "input[placeholder*='Password']",
+        "input[placeholder*='Kata Sandi']",
+        "input[autocomplete='current-password']",
+    ]
+
+    email_el = None
+    for sel in email_selectors:
+        try:
+            el = page.query_selector(sel)
+            if el and el.is_visible():
+                email_el = el
+                print(f"  Found email field: {sel}")
+                break
+        except Exception:
+            continue
+
+    password_el = None
+    for sel in password_selectors:
+        try:
+            el = page.query_selector(sel)
+            if el and el.is_visible():
+                password_el = el
+                print(f"  Found password field: {sel}")
+                break
+        except Exception:
+            continue
+
+    if email_el and password_el:
+        login_fields_found = True
+        try:
+            email_el.click()
+            page.wait_for_timeout(300)
+            email_el.fill(email)
+            print("  Email filled")
+        except Exception as e:
+            print(f"  Failed to fill email: {e}")
+
+        try:
+            password_el.click()
+            page.wait_for_timeout(300)
+            password_el.fill(password)
+            print("  Password filled")
+        except Exception as e:
+            print(f"  Failed to fill password: {e}")
+
+        submit_selectors = [
+            "button[type='submit']",
+            "button:has-text('Sign in')",
+            "button:has-text('Log in')",
+            "button:has-text('Login')",
+            "button:has-text('Masuk')",
+            "button:has-text('Continue')",
+            "button:has-text('Lanjutkan')",
+            "button:has-text('Submit')",
+            "button[class*='submit']",
+            "button[class*='login']",
+            "button[class*='sign-in']",
+        ]
+
+        for sel in submit_selectors:
+            try:
+                btn = page.query_selector(sel)
+                if btn and btn.is_visible():
+                    btn.click()
+                    print(f"  Submit clicked: {sel}")
+                    break
+            except Exception:
+                continue
+
+        page.wait_for_timeout(5000)
+
+    try:
+        page.wait_for_url(re.compile(r"/ai-tool/"), timeout=30000)
+        print("  Login successful! Detected at /ai-tool/")
+        return True
+    except Exception:
+        pass
+
+    try:
+        page.wait_for_url(re.compile(r"dreamina\.capcut\.com/(home|ai-tool|create)"), timeout=30000)
+        print("  Login detected! Redirected to Dreamina.")
+        return True
+    except Exception:
+        pass
+
+    if login_fields_found:
+        print("  Auto-login attempted but could not verify success.")
+    else:
+        print("  Could not find login form.")
+
+    return False
+
+
+def process_tier(browser, tier_name, output_path, prompt, timeout_ms, email=None, password=None):
     page = browser.new_page()
     page.set_viewport_size({"width": 1280, "height": 800})
 
@@ -190,19 +351,19 @@ def process_tier(browser, tier_name, output_path, prompt, timeout_ms):
 
     page.goto("https://dreamina.capcut.com/", wait_until="domcontentloaded")
 
-    print("\n" + "=" * 60)
-    print("  MANUAL LOGIN")
-    print("=" * 60)
-    print("  1. A browser window is open to Dreamina")
-    print("  2. Log in with your ByteDance/Dreamina account")
-    print("  3. Script auto-detects login, or press Enter to continue")
-    print("=" * 60 + "\n")
-
-    try:
-        page.wait_for_url(re.compile(r"/ai-tool/"), timeout=120000)
-        print("  Login detected!")
-    except Exception:
-        print("  Login timeout (2min). Continuing...")
+    if email and password:
+        logged_in = auto_login(page, email, password)
+        if not logged_in:
+            print("\n  Auto-login gagal. Silakan login manual.")
+            input("  Press Enter once logged in...")
+    else:
+        print("\n" + "=" * 60)
+        print("  MANUAL LOGIN")
+        print("=" * 60)
+        print("  1. A browser window is open to Dreamina")
+        print("  2. Log in with your ByteDance/Dreamina account")
+        print("  3. Press Enter once logged in")
+        print("=" * 60 + "\n")
         input("  Press Enter once logged in...")
 
     page.goto("https://dreamina.capcut.com/ai-tool/image", wait_until="domcontentloaded")
@@ -298,12 +459,12 @@ def process_tier(browser, tier_name, output_path, prompt, timeout_ms):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Generate Dreamina catalog image with manual login + logo reference"
+        description="Generate Dreamina catalog image with auto-login + logo reference"
     )
     parser.add_argument("--tier", choices=["starter", "growth", "enterprise", "all"],
                         default="starter", help="Which tier to generate")
     parser.add_argument("--output", "-o", default=None,
-                        help="Output PNG path (default: ./dreamina_<tier>.png)")
+                        help="Output PNG path (default: venturo-poster/output/dreamina_<tier>.png)")
     parser.add_argument("--prompt", "-p", default=None,
                         help="Custom prompt (overrides auto-generated)")
     parser.add_argument("--prompt-file", type=Path,
@@ -312,6 +473,8 @@ def main():
                         help="Max wait in ms for generation (default: 180000 = 3 min)")
     parser.add_argument("--no-logo", action="store_true",
                         help="Skip logo reference upload")
+    parser.add_argument("--manual-login", action="store_true",
+                        help="Skip auto-login, user logs in manually")
     args = parser.parse_args()
 
     if not LOGO_PATH.exists():
@@ -325,6 +488,11 @@ def main():
         print("ERROR: Playwright not installed.")
         print("  pip install playwright && playwright install chromium")
         sys.exit(1)
+
+    email = password = None
+    if not args.manual_login:
+        email, password = prompt_credentials()
+        print()
 
     tiers_to_run = ["starter", "growth", "enterprise"] if args.tier == "all" else [args.tier]
 
@@ -346,7 +514,7 @@ def main():
                     prompt = build_prompt(tier)
 
             out_path = resolve_output_path(tier, args.output)
-            process_tier(browser, tier, out_path, prompt, args.timeout)
+            process_tier(browser, tier, out_path, prompt, args.timeout, email, password)
 
         browser.close()
 

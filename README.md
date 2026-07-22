@@ -24,8 +24,11 @@ pip install playwright && playwright install chromium
 ## Quick Start
 
 ```bash
-# Generate satu paket
+# Generate satu paket (akan diminta email & password Dreamina)
 python3 venturo-poster/scripts/generate_base.py --tier starter
+
+# Manual login (skip auto-login)
+python3 venturo-poster/scripts/generate_base.py --tier starter --manual-login
 
 # Generate semua paket sekaligus
 python3 venturo-poster/scripts/generate_base.py --tier all
@@ -45,10 +48,11 @@ python3 venturo-poster/scripts/generate_base.py \
 
 1. Script membuka Chromium (non-headless) ke Dreamina
 2. **Login manual** — user login ke akun ByteDance/Dreamina
-3. Script upload `assets/image_1c155d.png` (logo Venturo) sebagai reference image
-4. Script isi prompt text otomatis (dengan fallback manual)
-5. AI generate gambar katalog dengan logo Venturo sudah ter-composite
-6. Hasil disimpan sebagai PNG
+3. **Auto-fill email & password** (atau login manual dengan `--manual-login`)
+4. Script upload `assets/image_1c155d.png` (logo Venturo) sebagai reference image
+5. Script isi prompt text otomatis (dengan fallback manual)
+6. AI generate gambar katalog dengan logo Venturo sudah ter-composite
+7. Hasil disimpan ke `output/dreamina_<tier>.png`
 
 ## Package Tiers
 
@@ -66,7 +70,7 @@ venturo-poster/
 ├── skills/venturo-poster/SKILL.md
 ├── assets/image_1c155d.png          # Venturo logo (reference untuk AI)
 ├── scripts/
-│   └── generate_base.py             # Dreamina AI + Playwright manual login
+│   └── generate_base.py             # Dreamina AI + Playwright auto-login
 ├── templates/packages_context.md    # Service tier reference
 ├── output/                          # Generated images
 ├── install.sh
