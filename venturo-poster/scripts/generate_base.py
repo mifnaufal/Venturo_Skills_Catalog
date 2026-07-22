@@ -1,45 +1,84 @@
 #!/usr/bin/env python3
-"""
-generate_base.py — Venturo WhatsApp Catalog Background Generator
-
-Generates a 1080x1080 background via Dreamina (CapCut AI) API.
-Fallback chain: dreamina-5.0 → dreamina-4.5 → dreamina-4.1 → gpt-image-2 → placeholder
-Multi-session rotation: jika session kena limit, otomatis pindah session berikutnya.
-
-Config: config/cookies.json — isi dengan session ID dari cookies dreamina.capcut.com
-
-Usage:
-    python generate_base.py \
-        --prompt "..." \
-        --tier starter \
-        --output /path/to/output.png
-"""
 
 import argparse
+import hashlib
 import json
 import os
 import sys
 import time
+import uuid
 import urllib.request
 from pathlib import Path
 
-MODEL_CHAIN = ["dreamina-5.0", "dreamina-4.5", "dreamina-4.1", "gpt-image-2"]
+MODEL_CHAIN = ["dreamina-4.5", "dreamina-4.1", "dreamina-4.0"]
 POLL_INTERVAL = 3
 POLL_TIMEOUT = 180
+
+# ── Region config ──────────────────────────────────────────────
+REGION_CONFIG = {
+    "us": {
+        "base_url": "https://mweb-api-sg.capcut.com",
+        "aid": 513641, "region_code": "US", "store_region": "us",
+    },
+    "sg": {
+        "base_url": "https://mweb-api-sg.capcut.com",
+        "aid": 513641, "region_code": "SG", "store_region": "hk",
+    },
+    "hk": {
+        "base_url": "https://mweb-api-sg.capcut.com",
+        "aid": 513641, "region_code": "HK", "store_region": "hk",
+    },
+    "jp": {
+        "base_url": "https://mweb-api-sg.capcut.com",
+        "aid": 513641, "region_code": "JP", "store_region": "hk",
+    },
+}
+
+MODEL_MAP = {
+    "dreamina-4.5": "high_aes_general_v40l",
+    "dreamina-4.1": "high_aes_general_v41",
+    "dreamina-4.0": "high_aes_general_v40",
+    "jimeng-4.5": "high_aes_general_v40l",
+    "jimeng-4.1": "high_aes_general_v41",
+    "jimeng-4.0": "high_aes_general_v40",
+}
+
+RESOLUTIONS = {
+    "1k": {"1:1": (1024, 1024, 1)},
+    "2k": {"1:1": (2048, 2048, 1)},
+    "4k": {"1:1": (4096, 4096, 101)},
+}
+
+PLATFORM_CODE = "7"
+VERSION_CODE = "5.8.0"
+DRAFT_VERSION = "3.3.7"
+DRAFT_MIN_VERSION = "3.0.2"
+
+# ── Helpers ────────────────────────────────────────────────────
 
 def get_plugin_root():
     return Path(__file__).resolve().parent.parent
 
+
 def load_config():
     cfg_path = get_plugin_root() / "config" / "cookies.json"
     if not cfg_path.exists():
-        return {"api_url": "", "session_ids": []}
+        return {"session_ids": [], "region": "sg"}
 
     try:
         with open(cfg_path) as f:
             return json.load(f)
     except (json.JSONDecodeError, IOError):
-        return {"api_url": "", "session_ids": []}
+        return {"session_ids": [], "region": "sg"}
+
+
+def new_uuid():
+    return str(uuid.uuid4())
+
+
+def md5(s):
+    return hashlib.md5(s.encode()).hexdigest()
+
 
 def build_prompt(base_prompt, tier, aesthetics, lighting, bg_tone):
     tier_hints = {
@@ -48,7 +87,7 @@ def build_prompt(base_prompt, tier, aesthetics, lighting, bg_tone):
         "enterprise": "High-tech, dark cyberpunk, data streams, cybersecurity, holographic.",
     }
 
-    prompt = (
+    return (
         f"Background visual untuk katalog WhatsApp Business — jasa pengembangan software. "
         f"Service tier: {tier}. "
         f"Gaya visual: {tier_hints.get(tier.lower(), 'Modern, profesional')}. "
@@ -61,63 +100,260 @@ def build_prompt(base_prompt, tier, aesthetics, lighting, bg_tone):
         f"Format kotak 1:1 untuk katalog WhatsApp. "
         f"Kualitas tinggi, resolusi 8K, lighting profesional."
     )
-    return prompt
 
-def call_dreamina(api_url, session_id, prompt, output_path, model="dreamina-5.0", ratio="1:1"):
-    headers = {
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {session_id}",
+
+def resolve_resolution(resolution="2k", ratio="1:1"):
+    rg = RESOLUTIONS.get(resolution)
+    if not rg:
+        return resolve_resolution("2k", ratio)
+    r = rg.get(ratio)
+    if not r:
+        return resolve_resolution(resolution, "1:1")
+    return {"width": r[0], "height": r[1], "image_ratio": r[2], "resolution_type": resolution}
+
+
+def build_core_param(model_internal, prompt, seed, ratio_res, negative_prompt=""):
+    cp = {
+        "type": "", "id": new_uuid(),
+        "model": model_internal, "prompt": prompt, "seed": seed,
+        "sample_strength": 0.5,
+        "image_ratio": ratio_res["image_ratio"],
+        "large_image_info": {
+            "type": "", "id": new_uuid(),
+            "min_version": DRAFT_MIN_VERSION,
+            "height": ratio_res["height"],
+            "width": ratio_res["width"],
+            "resolution_type": ratio_res["resolution_type"],
+        },
+        "intelligent_ratio": False,
     }
-    body = json.dumps({
-        "prompt": prompt,
-        "model": model,
-        "ratio": ratio,
-        "resolution": "2k",
-    }).encode()
+    if negative_prompt:
+        cp["negative_prompt"] = negative_prompt
+    return cp
 
-    submit_url = api_url.rstrip("/") + "/v1/images/generations"
-    req = urllib.request.Request(submit_url, data=body, headers=headers, method="POST")
+
+def build_metrics_extra(model_name, user_model, submit_id, ratio_res):
+    scene = {
+        "type": "image",
+        "scene": "ImageBasicGenerate",
+        "modelReqKey": user_model,
+        "resolutionType": ratio_res["resolution_type"],
+        "benefitCount": 4,
+        "reportParams": {
+            "enterSource": "generate",
+            "vipSource": "generate",
+            "extraVipFunctionKey": f"{user_model}-{ratio_res['resolution_type']}",
+            "useVipFunctionDetailsReporterHoc": True,
+        },
+    }
+    return json.dumps({
+        "promptSource": "custom",
+        "generateCount": 1,
+        "enterFrom": "click",
+        "sceneOptions": json.dumps([scene]),
+        "generateId": submit_id,
+        "isRegenerate": False,
+    })
+
+
+def build_draft_content(component_id, core_param):
+    return json.dumps({
+        "type": "draft",
+        "id": new_uuid(),
+        "min_version": DRAFT_MIN_VERSION,
+        "min_features": [],
+        "is_from_tsn": True,
+        "version": DRAFT_VERSION,
+        "main_component_id": component_id,
+        "component_list": [
+            {
+                "type": "image_base_component",
+                "id": component_id,
+                "min_version": DRAFT_MIN_VERSION,
+                "aigc_mode": "workbench",
+                "metadata": {
+                    "type": "", "id": new_uuid(),
+                    "created_platform": 3,
+                    "created_platform_version": "",
+                    "created_time_in_ms": str(int(time.time() * 1000)),
+                    "created_did": "",
+                },
+                "generate_type": "generate",
+                "abilities": {
+                    "type": "", "id": new_uuid(),
+                    "generate": {
+                        "type": "", "id": new_uuid(),
+                        "core_param": core_param,
+                    },
+                    "gen_option": {
+                        "type": "", "id": new_uuid(),
+                        "generate_all": False,
+                    },
+                },
+            },
+        ],
+    })
+
+
+def parse_region(region_str):
+    r = region_str.lower()
+    for prefix, code in [("us-", "us"), ("sg-", "sg"), ("hk-", "hk"), ("jp-", "jp")]:
+        if r.startswith(prefix):
+            return code, region_str[3:]
+    return "sg", region_str
+
+
+# ── Dreamina direct API ────────────────────────────────────────
+
+def dreamina_headers(token, region, uri, ts):
+    rc = REGION_CONFIG.get(region, REGION_CONFIG["sg"])
+
+    last7 = uri[-7:]
+    sign_input = f"9e2c|{last7}|{PLATFORM_CODE}|{VERSION_CODE}|{ts}||11ac"
+    sign = md5(sign_input)
+
+    user_id = md5(token)
+
+    cookies = "; ".join([
+        f"sid_guard={token}%7C{ts}%7C5184000%7CMon%2C+03-Feb-2025+08%3A17%3A09+GMT",
+        f"sessionid={token}",
+        f"sessionid_ss={token}",
+        f"uid_tt={user_id}",
+        f"uid_tt_ss={user_id}",
+        f"sid_tt={token}",
+        f"store-region={rc['store_region']}",
+        f"store-region-src=uid",
+        f"is_staff_user=false",
+    ])
+
+    return {
+        "Accept": "application/json, text/plain, */*",
+        "Content-Type": "application/json",
+        "Cookie": cookies,
+        "Device-Time": str(ts),
+        "Sign": sign,
+        "Sign-Ver": "1",
+        "Appid": str(rc["aid"]),
+        "Pf": PLATFORM_CODE,
+        "Appvr": VERSION_CODE,
+        "Origin": "https://dreamina.capcut.com",
+        "Referer": "https://dreamina.capcut.com/",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/132.0.0.0 Safari/537.36",
+    }
+
+
+def call_dreamina(prompt, output_path, token, model="dreamina-4.5", region="sg",
+                  ratio="1:1", resolution="2k"):
+    rc = REGION_CONFIG.get(region, REGION_CONFIG["sg"])
+
+    model_internal = MODEL_MAP.get(model)
+    if not model_internal:
+        return False, f"unknown model: {model}"
+
+    ratio_res = resolve_resolution(resolution, ratio)
+    ts = int(time.time())
+    submit_id = new_uuid()
+    component_id = new_uuid()
+    seed = int(time.time() * 1000000) % 100000000 + 2500000000
+
+    core_param = build_core_param(model_internal, prompt, seed, ratio_res)
+    draft_content = build_draft_content(component_id, core_param)
+    metrics_extra = build_metrics_extra(model, model, submit_id, ratio_res)
+
+    body_data = {
+        "extend": {"root_model": model_internal},
+        "submit_id": submit_id,
+        "metrics_extra": metrics_extra,
+        "draft_content": draft_content,
+        "http_common_info": {"aid": rc["aid"]},
+    }
+
+    uri = "/mweb/v1/aigc_draft/generate"
+    url = f"{rc['base_url']}{uri}"
+    params = f"aid={rc['aid']}&device_platform=web&region={rc['region_code']}"
+    full_url = f"{url}?{params}"
+
+    headers = dreamina_headers(token, region, uri, ts)
+    req = urllib.request.Request(full_url, data=json.dumps(body_data).encode(), headers=headers, method="POST")
 
     try:
-        with urllib.request.urlopen(req, timeout=30) as resp:
+        with urllib.request.urlopen(req, timeout=60) as resp:
             result = json.loads(resp.read())
     except Exception as e:
-        return False, f"submit failed: {e}"
+        return False, f"submit error: {e}"
 
-    task_id = result.get("task_id")
-    if not task_id:
-        return False, f"no task_id in response: {result}"
+    ret = result.get("ret", 0)
+    if ret != 0 and ret != "0":
+        msg = result.get("errmsg", "unknown")
+        return False, f"Dreamina error [{ret}]: {msg}"
 
-    status_url = api_url.rstrip("/") + f"/v1/images/tasks/{task_id}"
+    history_id = None
+    try:
+        history_id = result["data"]["aigc_data"]["history_record_id"]
+    except (KeyError, TypeError):
+        return False, f"no history_record_id: {json.dumps(result, ensure_ascii=False)[:300]}"
+
+    print(f"  task_id={history_id}")
+
+    # ── Poll ────────────────────────────────────────────────────
+    poll_uri = "/mweb/v1/get_history_by_ids"
+    poll_url = f"{rc['base_url']}{poll_uri}?aid={rc['aid']}&device_platform=web&region={rc['region_code']}"
     deadline = time.time() + POLL_TIMEOUT
 
     while time.time() < deadline:
         time.sleep(POLL_INTERVAL)
+
+        poll_headers = dreamina_headers(token, region, poll_uri, int(time.time()))
+        poll_body = json.dumps({
+            "data": {
+                "history_ids": [history_id],
+                "image_info": {
+                    "width": 2048, "height": 2048, "format": "webp",
+                    "image_scene_list": [
+                        {"scene": "normal", "width": 1080, "height": 1080, "uniq_key": "1080", "format": "webp"},
+                    ],
+                },
+            },
+        }).encode()
+
         try:
-            poll_req = urllib.request.Request(status_url, headers=headers)
-            with urllib.request.urlopen(poll_req, timeout=15) as resp:
+            preq = urllib.request.Request(poll_url, data=poll_body, headers=poll_headers, method="POST")
+            with urllib.request.urlopen(preq, timeout=30) as resp:
                 status = json.loads(resp.read())
         except Exception as e:
-            return False, f"poll failed: {e}"
+            return False, f"poll error: {e}"
 
-        s = status.get("status", "")
-        if s == "completed":
-            images = status.get("images", [])
+        task_info = status.get("data", {}).get(history_id, {})
+        if not task_info:
+            return False, f"task not found in poll response"
+
+        s = task_info.get("status")
+        progress = task_info.get("finished_image_count", 0) / max(task_info.get("total_image_count", 4), 1) * 100
+        print(f"  progress: {int(progress)}%")
+
+        if s in (10, 50):
+            images = []
+            for item in task_info.get("item_list", []):
+                url = (item.get("image", {}).get("large_images", [{}])[0].get("image_url")
+                       or item.get("common_attr", {}).get("cover_url")
+                       or item.get("image_url") or item.get("url"))
+                if url:
+                    images.append(url)
             if not images:
                 return False, "completed but no images"
+
             try:
                 urllib.request.urlretrieve(images[0], output_path)
                 return True, f"OK (model={model})"
             except Exception as e:
                 return False, f"download failed: {e}"
-        elif s in ("failed", "error"):
-            msg = status.get("error", status.get("message", "unknown error"))
-            return False, f"generation failed: {msg}"
-        elif s == "processing":
-            progress = status.get("progress", 0)
-            print(f"  progress: {progress}%")
+
+        elif s == 30:
+            fail_code = task_info.get("fail_code", "?")
+            return False, f"generation failed (code={fail_code})"
 
     return False, "timeout"
+
 
 def call_dalle(api_key, prompt, output_path, width=1080, height=1080):
     try:
@@ -143,6 +379,7 @@ def call_dalle(api_key, prompt, output_path, width=1080, height=1080):
         return True, "OK (DALL-E)"
     except Exception as e:
         return False, f"DALL-E error: {e}"
+
 
 def generate_placeholder(output_path, width=1080, height=1080, tier="starter"):
     try:
@@ -192,6 +429,7 @@ def generate_placeholder(output_path, width=1080, height=1080, tier="starter"):
     print(f"  placeholder fallback")
     return True, "OK (placeholder)"
 
+
 def main():
     parser = argparse.ArgumentParser(description="Generate Venturo catalog background via Dreamina")
     parser.add_argument("--prompt", required=True)
@@ -213,23 +451,26 @@ def main():
 
     config = load_config()
     sessions = config.get("session_ids", [])
-    api_url = config.get("api_url", "").strip()
+    region = config.get("region", "sg")
 
     ok = False
     reason = ""
 
-    # ── Dreamina API chain ──────────────────────────────────────
-    if api_url and sessions:
-        print(f"\nDreamina API: {api_url}")
+    # ── Dreamina API ────────────────────────────────────────────
+    if sessions:
+        print(f"\nRegion: {region}")
         print(f"Sessions: {len(sessions)} loaded")
 
         for session in sessions:
             sid = session.strip()
             if not sid:
                 continue
+            r, token = parse_region(sid)
+            actual_region = region or r
             for model in MODEL_CHAIN:
-                print(f"  trying model={model} session={sid[:20]}...")
-                ok, reason = call_dreamina(api_url, sid, enriched, str(output_path), model=model)
+                print(f"  trying model={model} token={token[:12]}... region={actual_region}")
+                print(f"  calling Dreamina API directly...")
+                ok, reason = call_dreamina(enriched, str(output_path), token, model=model, region=actual_region)
                 if ok:
                     print(f"  ✓ {reason}")
                     break
@@ -260,6 +501,7 @@ def main():
     else:
         print(f"\nFAILED: {reason}")
         sys.exit(1)
+
 
 if __name__ == "__main__":
     main()
