@@ -1,0 +1,5 @@
+{
+  "$schema": "https://antigravity.google/schemas/v1/plugin.json",
+  "name": "venturo-poster",
+  "description": "Generate branded marketing posters for Venturo's software development service packages (Starter, Growth, Enterprise) with AI-generated visuals and automatic logo compositing."
+}
