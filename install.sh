@@ -73,20 +73,15 @@ fi
 echo ""
 echo "Checking Python dependencies..."
 if command -v pip3 &>/dev/null; then
-    pip3 install Pillow playwright 2>/dev/null || true
-    python3 -m playwright install chromium 2>/dev/null || true
+    pip3 install Pillow 2>/dev/null || true
 elif command -v pip &>/dev/null; then
-    pip install Pillow playwright 2>/dev/null || true
-    python -m playwright install chromium 2>/dev/null || true
+    pip install Pillow 2>/dev/null || true
 else
     echo -e "${RED}Warning: pip not found. Run: pip install Pillow${NC}"
 fi
 
 if [ ! -f "$PLUGIN_DIR/assets/image_1c155d.png" ]; then
-    echo "Generating placeholder logo..."
-    python3 "$PLUGIN_DIR/scripts/generate_placeholder_logo.py" 2>/dev/null || \
-        python "$PLUGIN_DIR/scripts/generate_placeholder_logo.py" 2>/dev/null || \
-        echo -e "${RED}Warning: Place logo at assets/image_1c155d.png${NC}"
+    echo -e "${RED}Warning: Venturo logo not found at assets/image_1c155d.png${NC}"
 fi
 
 echo ""

@@ -67,17 +67,15 @@ if ($InstallMode -eq "skill") {
 Write-Host ""
 Write-Host "Checking Python dependencies..."
 try {
-    pip install Pillow openai 2>&1 | Out-Null
+    pip install Pillow 2>&1 | Out-Null
     Write-Host "Dependencies OK." -ForegroundColor Green
 } catch {
-    Write-Host "Warning: pip install Pillow openai" -ForegroundColor Yellow
+    Write-Host "Warning: pip install Pillow" -ForegroundColor Yellow
 }
 
 $LogoPath = Join-Path $PluginDir "assets\image_1c155d.png"
 if (-not (Test-Path $LogoPath)) {
-    Write-Host "Generating placeholder logo..."
-    $Gen = Join-Path $PluginDir "scripts\generate_placeholder_logo.py"
-    try { python $Gen } catch { Write-Host "Warning: Place logo at assets\image_1c155d.png" -ForegroundColor Yellow }
+    Write-Host "Warning: Venturo logo not found at $LogoPath" -ForegroundColor Yellow
 }
 
 Write-Host ""
