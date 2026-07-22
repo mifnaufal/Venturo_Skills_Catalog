@@ -81,26 +81,73 @@ def generate_via_playwright(prompt, output_path, session_token, region="sg"):
         _dismiss_dialogs(page)
 
         # ── Fill prompt into TipTap editor ──
-        editor = page.locator(".tiptap").first()
-        editor.wait_for(state="visible", timeout=10000)
-        editor.click()
-        page.wait_for_timeout(200)
-        # Use keyboard to clear and type
-        editor.fill("")
-        editor.type(prompt, delay=15)
-        page.wait_for_timeout(500)
+        editor = page.evaluate("""
+            () => document.querySelector('.tiptap')
+        """)
+        if not editor:
+            return False, "editor not found"
+        page.evaluate("""
+            (prompt) => {
+                const el = document.querySelector('.tiptap');
+                if (el) {
+                    el.focus();
+                    if (el._tiptapEditor) {
+                        el._tiptapEditor.commands.setContent(prompt);
+                    } else {
+                        el.innerHTML = '<p>' + prompt.replace(/\\n/g, '<br>') + '</p>';
+                    }
+                    const event = new Event('input', {bubbles: true});
+                    el.dispatchEvent(event);
+                }
+            }
+        """, prompt)
+        page.wait_for_timeout(1000)
 
         # ── Set ratio 1:1 ──
-        _set_ratio_to_1_1(page)
+        page.evaluate("""
+            () => {
+                const btns = document.querySelectorAll('button');
+                for (const btn of btns) {
+                    if (btn.textContent.includes('ratio') || btn.textContent.includes('Auto')) {
+                        btn.click();
+                        break;
+                    }
+                }
+            }
+        """)
+        page.wait_for_timeout(500)
+
+        page.evaluate("""
+            () => {
+                const items = document.querySelectorAll('[class*="option"], div, span');
+                for (const el of items) {
+                    if (el.textContent.trim() === '1:1' && el.offsetParent !== null) {
+                        el.click();
+                        break;
+                    }
+                }
+            }
+        """)
+        page.wait_for_timeout(300)
+        page.keyboard.press("Escape")
+        page.wait_for_timeout(300)
 
         # ── Click Generate ──
-        gen_btn = page.locator("button.lv-btn-primary").last
-        gen_btn.wait_for(state="visible", timeout=5000)
+        clicked = page.evaluate("""
+            () => {
+                const btns = document.querySelectorAll('button');
+                for (const btn of btns) {
+                    if (btn.className.includes('primary') && !btn.disabled && btn.offsetParent !== null) {
+                        btn.click();
+                        return true;
+                    }
+                }
+                return false;
+            }
+        """)
+        if not clicked:
+            return False, "Generate button not found or disabled"
 
-        if gen_btn.is_disabled():
-            return False, "Generate button disabled"
-
-        gen_btn.click()
         page.wait_for_timeout(2000)
 
         # ── Dismiss any post-click dialogs ──
@@ -109,7 +156,6 @@ def generate_via_playwright(prompt, output_path, session_token, region="sg"):
         # ── Wait for result ──
         ok, reason = _wait_for_result(page, output_path, timeout=180)
         if not ok:
-            # Try again: maybe dialog appeared mid-generation
             _dismiss_dialogs(page)
             ok, reason = _wait_for_result(page, output_path, timeout=120)
 
@@ -119,86 +165,42 @@ def generate_via_playwright(prompt, output_path, session_token, region="sg"):
 
 def _dismiss_dialogs(page):
     for _ in range(3):
-        dialog_count = page.locator("dialog, [role='dialog']").count()
-        if dialog_count == 0:
+        has_dialog = page.evaluate("() => !!document.querySelector('dialog, [role=\"dialog\"]')")
+        if not has_dialog:
             return
         page.keyboard.press("Escape")
         page.wait_for_timeout(500)
 
 
-def _set_ratio_to_1_1(page):
-    try:
-        btn = page.locator('button:has-text("ratio")')
-        if btn.count() == 0:
-            return
-        btn.click()
-        page.wait_for_timeout(500)
-
-        # Click "1:1" in the popover
-        one_one = page.locator('text="1:1"').first
-        if one_one.count() > 0:
-            one_one.click()
-            page.wait_for_timeout(300)
-
-        # Close popover by clicking somewhere else
-        page.locator(".tiptap").first.click()
-        page.wait_for_timeout(300)
-    except Exception:
-        pass
-
-
 def _wait_for_result(page, output_path, timeout=180):
     deadline = time.time() + timeout
-
-    # Count initial history cards
-    initial_cards = _count_image_cards(page)
 
     while time.time() < deadline:
         page.wait_for_timeout(3000)
         _dismiss_dialogs(page)
 
-        cards = _count_image_cards(page)
-        if cards > initial_cards:
-            # New card appeared — get the image
-            img_url = _get_latest_image_url(page)
-            if img_url:
-                page.goto(img_url, wait_until="networkidle")
-                page.screenshot(path=output_path, full_page=False)
-                # Ensure it's PNG
-                _ensure_png(output_path)
-                return True, f"OK (generated)"
-
-        # Also check for any visible image in the DOM
-        img_url = _get_latest_image_url(page)
+        img_url = page.evaluate("""
+            () => {
+                const imgs = document.querySelectorAll('img');
+                for (const img of imgs) {
+                    if (img.src && img.src.includes('ibyteimg.com') && img.naturalWidth > 100) return img.src;
+                    if (img.src && img.src.includes('capcut') && img.naturalWidth > 100) return img.src;
+                    if (img.src && img.src.includes('dreamina') && img.naturalWidth > 100) return img.src;
+                }
+                return null;
+            }
+        """)
         if img_url:
             try:
                 resp = page.goto(img_url, wait_until="networkidle", timeout=15000)
                 if resp and resp.ok:
                     page.screenshot(path=output_path, full_page=False)
                     _ensure_png(output_path)
-                    return True, f"OK (from DOM)"
+                    return True, "OK"
             except Exception:
                 pass
 
     return False, "timeout"
-
-
-def _count_image_cards(page):
-    return page.evaluate("""
-        () => document.querySelectorAll('[class*="image-card"], [class*="ImageCard"], [class*="card"] img').length
-    """)
-
-
-def _get_latest_image_url(page):
-    return page.evaluate("""
-        () => {
-            const imgs = document.querySelectorAll('img[src*="ibyteimg"], img[src*="capcut"], img[src*="dreamina"]');
-            for (const img of imgs) {
-                if (img.src && img.src.startsWith('http') && img.naturalWidth > 100) return img.src;
-            }
-            return null;
-        }
-    """)
 
 
 def _ensure_png(path):
