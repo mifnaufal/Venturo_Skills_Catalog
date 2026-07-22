@@ -1,7 +1,6 @@
 {
-  "api_url": "https://your-worker.workers.dev",
   "session_ids": [
-    "us-tulis_session_id_dari_cookies_dreamina_disini"
+    "sg-paste_session_id_disini"
   ],
-  "region": "us"
+  "region": "sg"
 }

@@ -15,8 +15,9 @@ Generate **WhatsApp Business catalog images** (1080x1080) for Venturo's software
 git clone https://github.com/<username>/venturo-catalog-plugin.git
 cd Venturo_Skills_Catalog
 
-# Install Python dependency
-pip install Pillow
+# Install Python dependencies
+pip install Pillow playwright
+python3 -m playwright install chromium
 
 # Install sebagai Antigravity plugin
 ./install.sh
@@ -27,6 +28,7 @@ pip install Pillow
 **Windows (PowerShell):**
 ```powershell
 .\install.ps1
+python -m playwright install chromium
 ```
 
 Register plugin:
@@ -36,23 +38,24 @@ agy plugin install ~/.gemini/antigravity-cli/plugins/venturo-poster
 
 ## Setup Dreamina
 
-Before generating, you need a Dreamina session ID:
+Script ini otomatis buka **Chromium asli** (via Playwright) dan generate gambar langsung dari web Dreamina — jadi risk control & credits web normal.
+
+Sebelum generate, siapkan session ID Dreamina:
 
 1. Buka [dreamina.capcut.com](https://dreamina.capcut.com), login (Google/Facebook/TikTok)
 2. Buka DevTools (F12) → **Application** tab → **Cookies** → `dreamina.capcut.com`
-3. Cari cookie `sessionid` atau `sessionid_ss`, copy nilainya
+3. Cari cookie **`sessionid`**, copy nilainya
 4. Edit `venturo-poster/config/cookies.json`:
 ```json
 {
-  "api_url": "https://j.aisk.de5.net",
-  "session_ids": ["us-paste_session_id_disini"],
-  "region": "us"
+  "session_ids": ["sg-paste_session_id_disini"],
+  "region": "sg"
 }
 ```
-   Tambahkan prefix region (`us-`, `hk-`, `sg-`, `jp-`) sesuai lokasi akunmu.
-   Bisa tambah multiple session ID (dipisah koma) biar auto-rotate jika limit habis.
+   Prefix region sesuai lokasi akun: `us-`, `sg-`, `hk-`, `jp-`.
+   Bisa tambah beberapa session ID (array) — auto-rotate jika limit habis.
 
-> `config/cookies.json` sudah di `.gitignore` — tidak akan ter-commit.
+> `config/cookies.json` sudah di `.gitignore` — aman dari commit.
 
 ## Cara Pakai
 
@@ -64,9 +67,9 @@ agy
 #              "bikin catalog gambar paket Growth"
 ```
 
-**Via script langsung:**
+**Via script langsung (Playwright browser automation):**
 ```bash
-# 1. Generate background
+# 1. Generate background (buka Chromium → dreamina.capcut.com → generate → download)
 python3 venturo-poster/scripts/generate_base.py \
   --prompt "ERP dashboard modern dengan tim developer" \
   --tier growth \
@@ -105,7 +108,7 @@ venturo-poster/                          # Plugin root
 │   └── cookies.example.json             # Template referensi
 ├── assets/image_1c155d.png              # Venturo logo (asli)
 ├── scripts/
-│   ├── generate_base.py                 # Dreamina API + fallback chain
+│   ├── generate_base.py                 # Playwright → dreamina.capcut.com
 │   ├── composite_logo.py               # Text rendering + logo overlay
 │   └── generate_placeholder_logo.py     # Dev placeholder
 ├── templates/packages_context.md        # Service tier reference
