@@ -63,7 +63,7 @@ python3 venturo-poster/scripts/generate_base.py \
 ```
 venturo-poster/
 ├── plugin.json
-├── skills/venturo-poster.md
+├── skills/venturo-poster/SKILL.md
 ├── assets/image_1c155d.png          # Venturo logo (reference untuk AI)
 ├── scripts/
 │   └── generate_base.py             # Dreamina AI + Playwright manual login
