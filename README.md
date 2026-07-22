@@ -99,9 +99,12 @@ venturo-poster/                          # Plugin root
 ├── skills/venturo-poster.md             # Skill def → /venturo-poster
 ├── agents/                              # Subagent templates
 ├── rules/                               # Codebase rules
+├── config/
+│   ├── cookies.json                     # Dreamina session ID (gitignored)
+│   └── cookies.example.json             # Template referensi
 ├── assets/image_1c155d.png              # Venturo logo (asli)
 ├── scripts/
-│   ├── generate_base.py                 # Background AI generation (1080x1080)
+│   ├── generate_base.py                 # Dreamina API + fallback chain
 │   ├── composite_logo.py               # Text rendering + logo overlay
 │   └── generate_placeholder_logo.py     # Dev placeholder
 ├── templates/packages_context.md        # Service tier reference
