@@ -1,30 +1,26 @@
-# Venturo Poster — Antigravity Plugin
+# Venturo WhatsApp Business Catalog — Antigravity Plugin
 
-An **Antigravity CLI plugin** that generates branded marketing posters for Venturo's software development service packages (Starter, Growth, Enterprise).
+Generate **WhatsApp Business catalog images** (1080x1080) for Venturo's software development service packages. AI-generated backgrounds + auto text rendering + logo compositing.
 
 ## Prerequisites
 
-- [Antigravity CLI](https://antigravity.google/docs/cli/install) installed & authenticated
-- Python 3.8+
-- Pillow: `pip install Pillow`
-- (Optional) `OPENAI_API_KEY` env var for DALL-E 3 image generation
+- [Antigravity CLI](https://antigravity.google/docs/cli/install)
+- Python 3.8+, Pillow: `pip install Pillow`
+- (Opsional) `OPENAI_API_KEY` untuk background AI
 
 ## Clone & Install
 
 ```bash
-# 1. Clone the repo
-git clone https://github.com/<your-username>/venturo-poster-plugin.git
-cd venturo-poster-plugin
+git clone https://github.com/<username>/venturo-catalog-plugin.git
+cd Venturo_Skills_Catalog
 
-# 2. Install Python dependency
+# Install Python dependency
 pip install Pillow
 
-# 3. Run installer (interactive)
+# Install sebagai Antigravity plugin
 ./install.sh
-
-#    Or pick a mode directly:
-#    ./install.sh --target plugin     → ~/.gemini/antigravity-cli/plugins/
-#    ./install.sh --target skill      → ~/.gemini/antigravity-cli/skills/  (/venturo-poster)
+# atau: ./install.sh --target plugin
+# atau: ./install.sh --target skill (slash command /venturo-poster)
 ```
 
 **Windows (PowerShell):**
@@ -32,64 +28,48 @@ pip install Pillow
 .\install.ps1
 ```
 
-### Manual Registration
-
-If you installed as a plugin, register it with Antigravity CLI:
-
+Register plugin:
 ```bash
 agy plugin install ~/.gemini/antigravity-cli/plugins/venturo-poster
 ```
 
-Verify it's loaded:
+## Cara Pakai
 
-```bash
-agy plugin list
-# → venturo-poster — Generate branded marketing posters for Venturo...
-```
-
-## Usage
-
-### Via TUI Slash Command
-
+**Via TUI:**
 ```bash
 agy
-# Then type:  /venturo-poster
+# lalu ketik:  /venturo-poster
+# atau chat:   "buat katalog WhatsApp buat Venturo Enterprise"
+#              "bikin catalog gambar paket Growth"
 ```
 
-The agent will interview you with 3–5 questions about tier, visuals, lighting, and text, then generate the poster.
-
-### Via Chat Prompt
-
+**Via script langsung:**
 ```bash
-agy
-# Then type:
-#   "buat poster untuk Venturo Enterprise"
-#   "create a poster for Venturo Growth package"
-#   "generate marketing poster Venturo Starter"
-```
-
-### Via Direct Script
-
-```bash
-# Generate base image (placeholder if no API key)
+# 1. Generate background
 python3 venturo-poster/scripts/generate_base.py \
-  --prompt "Modern ERP dashboard" \
+  --prompt "ERP dashboard modern dengan tim developer" \
   --tier growth \
   --aesthetics "Interconnected CRM dashboards" \
-  --lighting "Professional studio lighting" \
+  --lighting "Asian developers, natural lighting" \
   --bg-tone "Dark cybertech" \
-  --output /tmp/base.png
+  --output /tmp/bg.png
 
-# Composite logo onto it
+# 2. Render catalog card + logo
 python3 venturo-poster/scripts/composite_logo.py \
-  --input /tmp/base.png \
-  --output venturo-poster/output/poster.png \
+  --input /tmp/bg.png \
+  --output venturo-poster/output/catalog_growth.png \
+  --tier growth \
   --position bottom-right
 ```
 
-## Replace the Logo
+## Output Specs
 
-A placeholder logo is auto-generated at `assets/image_1c155d.png`. Replace it with Venturo's official logo before production use.
+| Item | Spec |
+|------|------|
+| Ukuran | 1080 x 1080 px (1:1) |
+| Format | PNG |
+| Konten | Nama paket, budget, deskripsi, tim, timeline, logo Venturo |
+| Bahasa | Indonesia |
 
 ## Project Structure
 
@@ -99,19 +79,19 @@ venturo-poster/                          # Plugin root
 ├── skills/venturo-poster.md             # Skill def → /venturo-poster
 ├── agents/                              # Subagent templates
 ├── rules/                               # Codebase rules
-├── assets/image_1c155d.png              # Venturo logo
+├── assets/image_1c155d.png              # Venturo logo (asli)
 ├── scripts/
-│   ├── generate_base.py                 # AI image generation
-│   ├── composite_logo.py               # Logo overlay
+│   ├── generate_base.py                 # Background AI generation (1080x1080)
+│   ├── composite_logo.py               # Text rendering + logo overlay
 │   └── generate_placeholder_logo.py     # Dev placeholder
 ├── templates/packages_context.md        # Service tier reference
-└── output/                              # Generated posters
+└── output/                              # Generated catalog images
 ├── install.sh                           # Linux/macOS installer
 ├── install.ps1                          # Windows installer
 └── README.md
 ```
 
-Reference: [Antigravity CLI Plugins & Skills](https://antigravity.google/docs/cli/plugins)
+Referensi: [Antigravity CLI Plugins & Skills](https://antigravity.google/docs/cli/plugins)
 
 ## License
 
