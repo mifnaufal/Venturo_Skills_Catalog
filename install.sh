@@ -1,7 +1,10 @@
+#!/bin/bash
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PLUGIN_DIR="$SCRIPT_DIR/venturo-poster"
+SKILL_SRC="$SCRIPT_DIR/venturo-poster/skills/venturo-poster.md"
+SKILL_DEST="$HOME/.gemini/antigravity-cli/skills/venturo-poster.md"
+ASSETS_DIR="$SCRIPT_DIR/venturo-poster/assets/image_1c155d.png"
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -9,87 +12,45 @@ CYAN='\033[0;36m'
 NC='\033[0m'
 
 echo -e "${CYAN}============================================${NC}"
-echo -e "${CYAN}  Venturo Poster — Antigravity Plugin Install${NC}"
+echo -e "${CYAN}  Venturo Poster — Antigravity Skill Install ${NC}"
 echo -e "${CYAN}============================================${NC}"
 echo ""
 
-if [ ! -f "$PLUGIN_DIR/plugin.json" ]; then
-    echo -e "${RED}ERROR: venturo-poster/plugin.json not found.${NC}"
-    echo "Make sure install.sh is in the same directory as venturo-poster/"
+# 1. Validate files
+if [ ! -f "$SKILL_SRC" ]; then
+    echo -e "${RED}ERROR: skills/venturo-poster.md not found${NC}"
+    exit 1
+fi
+if [ ! -f "$ASSETS_DIR" ]; then
+    echo -e "${RED}ERROR: assets/image_1c155d.png not found${NC}"
     exit 1
 fi
 
-TARGET=""
-INSTALL_MODE="plugin"
+# 2. Copy skill
+mkdir -p "$(dirname "$SKILL_DEST")"
+cp "$SKILL_SRC" "$SKILL_DEST"
+echo -e "${GREEN}✔ Skill installed:${NC} $SKILL_DEST"
 
-if [ $# -ge 2 ] && [ "$1" = "--target" ]; then
-    TARGET="$2"
-    case "$TARGET" in
-        plugin|plugins) TARGET="$HOME/.gemini/antigravity-cli/plugins" ;;
-        skill|skills)   TARGET="$HOME/.gemini/antigravity-cli/skills"; INSTALL_MODE="skill" ;;
-    esac
-fi
-
-if [ -z "$TARGET" ]; then
-    echo "Select install mode:"
-    echo "  1) Plugin  → ~/.gemini/antigravity-cli/plugins/ (agy plugin install)"
-    echo "  2) Skill   → ~/.gemini/antigravity-cli/skills/  (/venturo-poster command)"
-    echo "  3) Project → .agents/skills/  (local to this dir)"
-    echo "  4) Custom path"
-    read -rp "Choice [1-4]: " choice
-    case "$choice" in
-        1) TARGET="$HOME/.gemini/antigravity-cli/plugins"; INSTALL_MODE="plugin" ;;
-        2) TARGET="$HOME/.gemini/antigravity-cli/skills";  INSTALL_MODE="skill" ;;
-        3) TARGET=".agents/skills";                         INSTALL_MODE="skill" ;;
-        4) read -rp "Enter target path: " TARGET;            INSTALL_MODE="custom" ;;
-        *) echo -e "${RED}Invalid choice.${NC}"; exit 1 ;;
-    esac
-fi
-
-TARGET_DIR="$(eval echo "$TARGET")"
-mkdir -p "$TARGET_DIR"
-
-if [ "$INSTALL_MODE" = "skill" ]; then
-    DEST="$TARGET_DIR/venturo-poster.md"
-    SRC="$PLUGIN_DIR/skills/venturo-poster.md"
-    if [ -f "$DEST" ]; then
-        read -rp "Skill already exists. Overwrite? [y/N] " confirm
-        [ "$confirm" != "y" ] && [ "$confirm" != "Y" ] && { echo "Cancelled."; exit 0; }
-    fi
-    cp "$SRC" "$DEST"
-    echo -e "${GREEN}✔ Skill installed to $DEST${NC}"
+# 3. Install Playwright
+echo ""
+echo "Installing Python dependencies..."
+pip3 install playwright 2>/dev/null || pip install playwright 2>/dev/null || true
+if python3 -c "from playwright.sync_api import sync_playwright; print('OK')" 2>/dev/null; then
+    echo -e "${GREEN}✔ Playwright already installed${NC}"
 else
-    DEST="$TARGET_DIR/venturo-poster"
-    if [ -d "$DEST" ]; then
-        read -rp "Plugin already exists at $DEST. Overwrite? [y/N] " confirm
-        [ "$confirm" != "y" ] && [ "$confirm" != "Y" ] && { echo "Cancelled."; exit 0; }
-        rm -rf "$DEST"
-    fi
-    cp -r "$PLUGIN_DIR" "$DEST"
-    echo -e "${GREEN}✔ Plugin installed to $DEST${NC}"
-    echo "  Register with: agy plugin install $DEST"
+    echo "Installing Playwright browsers..."
+    python3 -m playwright install chromium 2>/dev/null || echo -e "${RED}Run: playwright install chromium${NC}"
 fi
 
+# 4. Done
 echo ""
-echo "Checking Python dependencies..."
-if command -v pip3 &>/dev/null; then
-    pip3 install Pillow 2>/dev/null || true
-elif command -v pip &>/dev/null; then
-    pip install Pillow 2>/dev/null || true
-else
-    echo -e "${RED}Warning: pip not found. Run: pip install Pillow${NC}"
-fi
-
-if [ ! -f "$PLUGIN_DIR/assets/image_1c155d.png" ]; then
-    echo -e "${RED}Warning: Venturo logo not found at assets/image_1c155d.png${NC}"
-fi
-
+echo -e "${GREEN}✔ Venturo Poster — Antigravity Skill ready!${NC}"
 echo ""
-echo -e "${GREEN}✔ Venturo Poster Plugin ready!${NC}"
+echo "Cara pakai:"
+echo "  agy"
+echo "  → ketik: /venturo-poster"
+echo "  → atau:  buat katalog WhatsApp buat Venturo"
 echo ""
-echo "Quick start:"
-echo "  agy plugin install $DEST"
-echo "  agy  →  /venturo-poster"
+echo "Script path untuk skill:"
+echo "  $SCRIPT_DIR/venturo-poster/scripts/generate_base.py"
 echo ""
-echo "Or use as a standalone skill:"
-echo "  ./install.sh --target skill"
