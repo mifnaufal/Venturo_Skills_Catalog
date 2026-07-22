@@ -11,9 +11,9 @@ from PIL import Image, ImageDraw, ImageFont
 
 DEFAULT_SPEC = {
     "canvas": {
-        "orientation": "portrait",
+        "orientation": "square",
         "background_color": "#FFFFFF",
-        "aspect_ratio": "3:4"
+        "aspect_ratio": "1:1"
     },
     "brand": {
         "name": "VENTURO",
@@ -23,7 +23,6 @@ DEFAULT_SPEC = {
     "color_palette": {
         "primary": "#006D79",
         "primary_light": "#009BAD",
-        "primary_glow": "rgba(0, 155, 173, 0.15)",
         "dark": "#202020",
         "light_bg": "#F6F8F8",
         "white": "#FFFFFF",
@@ -103,7 +102,7 @@ TIER_DATA = [
         "price": "Rp80 Juta – Rp250 Juta",
         "description": "Finance, HRIS, CRM, ERP, Inventory, WMS, Logistic, Sales, Production, Asset Management. 4 tim spesialis.",
         "timeline": "2–3 Bulan",
-        "features": ["Finance/HRIS/CRM/ERP", "Inventory/WMS/Logistic", "4 Tim Spesialis"],
+        "features": ["Finance/HRIS/CRM", "Inventory/WMS", "4 Tim Spesialis"],
         "color": "#009BAD"
     },
     {
@@ -159,16 +158,20 @@ def find_fonts():
 
     if not bold_path:
         for d in ["/System/Library/Fonts", "/Library/Fonts"]:
-            for c in Path(d).rglob("*.ttf"):
-                if "Helvetica-Bold" in c.name or "Arial Bold" in c.name:
-                    bold_path = str(c)
-                    break
+            p = Path(d)
+            if p.exists():
+                for c in p.rglob("*.ttf"):
+                    if "Helvetica-Bold" in c.name or "Arial Bold" in c.name:
+                        bold_path = str(c)
+                        break
     if not reg_path:
         for d in ["/System/Library/Fonts", "/Library/Fonts"]:
-            for c in Path(d).rglob("*.ttf"):
-                if "Helvetica" in c.name and "Bold" not in c.name:
-                    reg_path = str(c)
-                    break
+            p = Path(d)
+            if p.exists():
+                for c in p.rglob("*.ttf"):
+                    if "Helvetica" in c.name and "Bold" not in c.name:
+                        reg_path = str(c)
+                        break
     return bold_path or "DejaVuSans-Bold.ttf", reg_path or "DejaVuSans.ttf"
 
 
@@ -177,6 +180,26 @@ def get_font(bold_path, reg_path, size, bold=True):
         return ImageFont.truetype(bold_path if bold else reg_path, size)
     except Exception:
         return ImageFont.load_default()
+
+
+def text_wrap(draw, text, font, max_w):
+    words = text.split()
+    if not words:
+        return [""]
+    lines = []
+    current = words[0]
+    for w in words[1:]:
+        test = current + " " + w
+        bbox = draw.textbbox((0, 0), test, font=font)
+        tw = bbox[2] - bbox[0]
+        if tw <= max_w:
+            current = test
+        else:
+            lines.append(current)
+            current = w
+    if current:
+        lines.append(current)
+    return lines
 
 
 def draw_rounded_rect(draw, xy, radius, fill=None, outline=None, width=1):
@@ -201,23 +224,23 @@ def draw_organic_blob(draw, cx, cy, w, h, color, alpha=20):
         draw.polygon(pts, fill=c)
 
 
-def draw_icon_placeholder(draw, x, y, size, color, icon_type="code"):
+def draw_icon_placeholder(draw, x, y, size, color, icon_type="code", lw=3):
     base = hr(color)
     bg = (base[0], base[1], base[2], 30)
-    draw_rounded_rect(draw, (x, y, x + size, y + size), radius=10, fill=bg)
+    draw_rounded_rect(draw, (x, y, x + size, y + size), radius=size // 6, fill=bg)
     cx, cy = x + size // 2, y + size // 2
     r = size // 5
     solid = (base[0], base[1], base[2], 255)
     if icon_type == "code":
-        draw.line([cx - r, cy - r, cx - r, cy + r], fill=solid, width=3)
-        draw.line([cx + r, cy - r, cx + r, cy + r], fill=solid, width=3)
-        draw.line([cx - r, cy - r, cx + r, cy], fill=solid, width=3)
-        draw.line([cx - r, cy + r, cx + r, cy], fill=solid, width=3)
+        draw.line([cx - r, cy - r, cx - r, cy + r], fill=solid, width=lw)
+        draw.line([cx + r, cy - r, cx + r, cy + r], fill=solid, width=lw)
+        draw.line([cx - r, cy - r, cx + r, cy], fill=solid, width=lw)
+        draw.line([cx - r, cy + r, cx + r, cy], fill=solid, width=lw)
     elif icon_type == "team":
         head_r = r // 2
         draw.ellipse([cx - head_r, cy - r, cx + head_r, cy - r + head_r * 2], fill=solid)
         body_top = cy - r + head_r * 2
-        draw.arc([cx - r, body_top, cx + r, cy + r], 0, 180, fill=solid, width=2)
+        draw.arc([cx - r, body_top, cx + r, cy + r], 0, 180, fill=solid, width=lw)
     elif icon_type == "chart":
         bar_w = r // 2
         gap = bar_w // 2
@@ -227,13 +250,10 @@ def draw_icon_placeholder(draw, x, y, size, color, icon_type="code"):
             draw.rectangle([bx, cy + r - h, bx + bar_w, cy + r], fill=solid)
 
 
-def render_design(spec, output_path, product_data=None, width=1080):
+def render_design(spec, output_path, product_data=None, size=3840):
     start = time.time()
 
-    aspect = spec["canvas"]["aspect_ratio"]
-    ratio_parts = [int(x) for x in aspect.split(":")]
-    height = int(width * ratio_parts[1] / ratio_parts[0])
-
+    width = height = size
     bg_color = hr(spec["canvas"]["background_color"])
     cp = spec["color_palette"]
     ls = spec["layout_structure"]
@@ -243,41 +263,44 @@ def render_design(spec, output_path, product_data=None, width=1080):
 
     bold_path, reg_path = find_fonts()
 
-    FONT_LOGO = get_font(bold_path, reg_path, int(width * 0.04))
-    FONT_LOGO_SUB = get_font(bold_path, reg_path, int(width * 0.016), bold=False)
-    FONT_HERO_TITLE = get_font(bold_path, reg_path, int(width * 0.05))
-    FONT_HERO_SUB = get_font(bold_path, reg_path, int(width * 0.02), bold=False)
-    FONT_STAT_NUM = get_font(bold_path, reg_path, int(width * 0.045))
-    FONT_STAT_LABEL = get_font(bold_path, reg_path, int(width * 0.016), bold=False)
-    FONT_SECTION = get_font(bold_path, reg_path, int(width * 0.032))
-    FONT_CARD_TITLE = get_font(bold_path, reg_path, int(width * 0.024))
-    FONT_CARD_PRICE = get_font(bold_path, reg_path, int(width * 0.022))
-    FONT_CARD_BODY = get_font(bold_path, reg_path, int(width * 0.016), bold=False)
-    FONT_CARD_LABEL = get_font(bold_path, reg_path, int(width * 0.014), bold=False)
-    FONT_FEATURE = get_font(bold_path, reg_path, int(width * 0.015))
-    FONT_BADGE = get_font(bold_path, reg_path, int(width * 0.018))
-    FONT_CTA = get_font(bold_path, reg_path, int(width * 0.02))
-    FONT_FOOTER = get_font(bold_path, reg_path, int(width * 0.016), bold=False)
-    FONT_FOOTER_CP = get_font(bold_path, reg_path, int(width * 0.012), bold=False)
+    s = width
+    FONT_LOGO = get_font(bold_path, reg_path, int(s * 0.04))
+    FONT_LOGO_SUB = get_font(bold_path, reg_path, int(s * 0.016), bold=False)
+    FONT_HERO_TITLE = get_font(bold_path, reg_path, int(s * 0.05))
+    FONT_HERO_SUB = get_font(bold_path, reg_path, int(s * 0.02), bold=False)
+    FONT_STAT_NUM = get_font(bold_path, reg_path, int(s * 0.045))
+    FONT_STAT_LABEL = get_font(bold_path, reg_path, int(s * 0.016), bold=False)
+    FONT_CARD_TITLE = get_font(bold_path, reg_path, int(s * 0.024))
+    FONT_CARD_PRICE = get_font(bold_path, reg_path, int(s * 0.022))
+    FONT_CARD_BODY = get_font(bold_path, reg_path, int(s * 0.016), bold=False)
+    FONT_CARD_LABEL = get_font(bold_path, reg_path, int(s * 0.014), bold=False)
+    FONT_FEATURE = get_font(bold_path, reg_path, int(s * 0.015))
+    FONT_BADGE = get_font(bold_path, reg_path, int(s * 0.018))
+    FONT_CTA = get_font(bold_path, reg_path, int(s * 0.02))
+    FONT_FOOTER_LBL = get_font(bold_path, reg_path, int(s * 0.016), bold=False)
+    FONT_FOOTER_VAL = get_font(bold_path, reg_path, int(s * 0.016))
+    FONT_FOOTER_CP = get_font(bold_path, reg_path, int(s * 0.012), bold=False)
 
-    margin = int(width * 0.055)
+    margin = int(s * 0.055)
     primary = hr(cp["primary"])
-    dark = hr(cp["dark"])
+    lw_base = max(2, s // 360)
 
     tiers = product_data or TIER_DATA
 
     # ── HEADER BAR ─────────────────────────────────────────────
-    header_h = int(width * 0.12)
+    header_h = int(s * 0.12)
     draw.rectangle([(0, 0), (width, header_h)], fill=(255, 255, 255, 255))
-    draw.line([(0, header_h), (width, header_h)], fill=(*primary[:3], 30), width=1)
+    draw.line([(0, header_h), (width, header_h)], fill=(*primary[:3], 30), width=lw_base)
 
-    logo_y = int(header_h * 0.25)
+    logo_y = int(header_h * 0.22)
     draw.text((margin, logo_y), "VENTURO", fill=(*primary[:3], 255), font=FONT_LOGO)
-    draw.text((margin, logo_y + int(FONT_LOGO.size * 0.9)),
-              "Software House Malang", fill=(*primary[:3], 180), font=FONT_LOGO_SUB)
+    sub_y = logo_y + FONT_LOGO.size
+    if sub_y + FONT_LOGO_SUB.size < header_h:
+        draw.text((margin, sub_y), "Software House Malang",
+                  fill=(*primary[:3], 180), font=FONT_LOGO_SUB)
 
     cta = ls["header"]["cta_button"]
-    cta_w = int(width * 0.22)
+    cta_w = int(s * 0.18)
     cta_h = int(header_h * 0.45)
     cta_x = width - margin - cta_w
     cta_y = int((header_h - cta_h) / 2)
@@ -289,127 +312,131 @@ def render_design(spec, output_path, product_data=None, width=1080):
     draw.text((cta_x + cta_w // 2 - tw // 2, cta_y + cta_h // 2 - th // 2),
               cta["text"], fill=hr(cta["color"]), font=FONT_CTA)
 
-    # ── HERO SECTION ───────────────────────────────────────────
+    # ── HERO SECTION (dynamic) ─────────────────────────────────
     hero = ls["hero"]
-    hero_top = header_h + int(width * 0.04)
-    hero_h = int(height * 0.28)
-
-    # Decorative blob
-    draw_organic_blob(draw, int(width * 0.7), hero_top + hero_h // 2,
-                      width // 2, hero_h, cp["primary"], alpha=15)
+    hero_top = header_h + int(s * 0.04)
+    gy = hero_top
 
     # Title
     title_lines = hero["title"].split("\n")
-    ty = hero_top
     for line in title_lines:
-        draw.text((margin, ty), line, fill=hr(cp["heading"]), font=FONT_HERO_TITLE)
-        ty += int(FONT_HERO_TITLE.size * 1.15)
+        draw.text((margin, gy), line, fill=hr(cp["heading"]), font=FONT_HERO_TITLE)
+        gy += int(FONT_HERO_TITLE.size * 1.15)
 
     # Subtitle
-    ty += int(width * 0.01)
-    draw.text((margin, ty), hero["subtitle"], fill=hr(cp["body"]), font=FONT_HERO_SUB)
+    gy += int(s * 0.01)
+    draw.text((margin, gy), hero["subtitle"], fill=hr(cp["body"]), font=FONT_HERO_SUB)
+    gy += int(FONT_HERO_SUB.size * 1.6)
 
     # Badge
-    badge_y = ty + int(FONT_HERO_SUB.size * 1.5)
-    badge_w = int(width * 0.32)
-    badge_h = int(width * 0.05)
-    draw_rounded_rect(draw, (margin, badge_y, margin + badge_w, badge_y + badge_h),
-                      radius=badge_h // 2, fill=(*hr(cp["primary"])[:3], 255))
+    badge_w = int(s * 0.22)
+    badge_h = int(s * 0.04)
+    draw_rounded_rect(draw, (margin, gy, margin + badge_w, gy + badge_h),
+                      radius=badge_h // 2, fill=(*primary[:3], 255))
     bbox = draw.textbbox((0, 0), hero["badge_text"], font=FONT_BADGE)
     tw = bbox[2] - bbox[0]
     th = bbox[3] - bbox[1]
-    draw.text((margin + badge_w // 2 - tw // 2, badge_y + badge_h // 2 - th // 2),
+    draw.text((margin + badge_w // 2 - tw // 2, gy + badge_h // 2 - th // 2),
               hero["badge_text"], fill=(255, 255, 255, 255), font=FONT_BADGE)
+    gy += badge_h + int(s * 0.05)
 
     # Stats
-    stats_top = badge_y + badge_h + int(width * 0.04)
     stat_w = (width - 2 * margin) // 2
     for i, (val, lbl) in enumerate([(hero["stat_1_value"], hero["stat_1_label"]),
                                      (hero["stat_2_value"], hero["stat_2_label"])]):
         sx = margin + i * stat_w
-        draw.text((sx, stats_top), val, fill=(*primary[:3], 255), font=FONT_STAT_NUM)
-        draw.text((sx, stats_top + int(FONT_STAT_NUM.size * 0.8)),
+        draw.text((sx, gy), val, fill=(*primary[:3], 255), font=FONT_STAT_NUM)
+        draw.text((sx, gy + int(FONT_STAT_NUM.size * 0.8)),
                   lbl, fill=hr(cp["body"]), font=FONT_STAT_LABEL)
+    gy += int(FONT_STAT_NUM.size) + int(FONT_STAT_LABEL.size) + int(s * 0.04)
 
-    # ── PACKAGE CARDS SECTION ─────────────────────────────────
-    cards_top = stats_top + int(FONT_STAT_NUM.size) + int(FONT_STAT_LABEL.size) + int(width * 0.05)
-    card_h = int((height - cards_top - int(height * 0.14)) / 3) - int(width * 0.02)
-    card_gap = int(width * 0.018)
+    # Decorative blob (hero right side)
+    hero_content_h = gy - hero_top
+    draw_organic_blob(draw, int(s * 0.75), hero_top + hero_content_h // 2,
+                      s // 2, hero_content_h, cp["primary"], alpha=15)
 
-    for idx, tier in enumerate(tiers[:3]):
+    # ── PACKAGE CARDS SECTION (dynamic) ────────────────────────
+    cards_top = gy
+    footer_h = int(s * 0.12)
+    cards_bottom = height - footer_h - int(s * 0.03)
+    avail_h = cards_bottom - cards_top
+    card_gap = int(s * 0.015)
+    num_cards = min(len(tiers[:3]), 3)
+    card_h = int((avail_h - card_gap * (num_cards - 1)) / num_cards)
+
+    for idx, tier in enumerate(tiers[:num_cards]):
         cy = cards_top + idx * (card_h + card_gap)
         card_color = hr(tier.get("color", cp["primary"]))
+        accent = (card_color[0], card_color[1], card_color[2], 255)
 
-        # Card background
+        # Card bg
         draw_rounded_rect(draw, (margin, cy, width - margin, cy + card_h),
-                          radius=10, fill=hr(cp["light_bg"]))
+                          radius=12, fill=hr(cp["light_bg"]))
 
         # Left accent bar
-        bar_w = int(width * 0.008)
+        bar_w = max(3, int(s * 0.006))
         draw_rounded_rect(draw, (margin, cy, margin + bar_w, cy + card_h),
-                          radius=3, fill=(*card_color[:3], 255))
+                          radius=3, fill=accent)
 
-        # Content
-        cx = margin + int(width * 0.04)
+        cx = margin + int(s * 0.035)
 
-        # Icon
-        icon_sz = int(card_h * 0.35)
+        # Icon (clamped)
+        icon_sz = min(int(card_h * 0.35), int(s * 0.055))
         icon_types = ["code", "team", "chart"]
-        draw_icon_placeholder(draw, cx, cy + int(card_h * 0.15), icon_sz, tier.get("color", cp["primary"]), icon_types[idx])
+        draw_icon_placeholder(draw, cx, cy + int(card_h * 0.12), icon_sz,
+                              tier.get("color", cp["primary"]), icon_types[idx], lw=max(2, lw_base))
+
+        # Text column
+        ix = cx + icon_sz + int(s * 0.025)
+        content_right = width - margin - int(s * 0.035)
+        text_max_w = content_right - ix
 
         # Label
-        ix = cx + icon_sz + int(width * 0.03)
-        draw.text((ix, cy + int(card_h * 0.08)), tier["label"],
+        draw.text((ix, cy + int(card_h * 0.07)), tier["label"],
                   fill=(*card_color[:3], 200), font=FONT_CARD_LABEL)
+        ty = cy + int(card_h * 0.07) + int(FONT_CARD_LABEL.size * 1.2)
 
         # Name
-        draw.text((ix, cy + int(card_h * 0.08) + int(FONT_CARD_LABEL.size * 1.1)),
-                  tier["name"], fill=(*card_color[:3], 255), font=FONT_CARD_TITLE)
+        draw.text((ix, ty), tier["name"], fill=accent, font=FONT_CARD_TITLE)
+        ty += int(FONT_CARD_TITLE.size * 1.2)
 
         # Price
-        draw.text((ix, cy + int(card_h * 0.08) + int(FONT_CARD_LABEL.size * 1.1) + int(FONT_CARD_TITLE.size * 1.15)),
-                  tier["price"], fill=(*card_color[:3], 255), font=FONT_CARD_PRICE)
+        draw.text((ix, ty), tier["price"], fill=accent, font=FONT_CARD_PRICE)
+        ty += int(FONT_CARD_PRICE.size * 1.2)
 
-        # Description (2 lines)
-        desc_words = tier["description"].split()
-        desc_line1 = " ".join(desc_words[:min(len(desc_words), 12)])
-        desc_line2 = " ".join(desc_words[min(len(desc_words), 12):])
-        desc_y = cy + int(card_h * 0.08) + int(FONT_CARD_LABEL.size * 1.1) + int(FONT_CARD_TITLE.size * 1.15) + int(FONT_CARD_PRICE.size * 1.1)
-        draw.text((ix, desc_y), desc_line1, fill=hr(cp["body"]), font=FONT_CARD_BODY)
-        if desc_line2:
-            draw.text((ix, desc_y + int(FONT_CARD_BODY.size * 1.2)),
-                      desc_line2, fill=hr(cp["body"]), font=FONT_CARD_BODY)
+        # Description (width-wrapped)
+        desc_lines = text_wrap(draw, tier["description"], FONT_CARD_BODY, text_max_w)
+        for dl in desc_lines[:4]:
+            draw.text((ix, ty), dl, fill=hr(cp["body"]), font=FONT_CARD_BODY)
+            ty += int(FONT_CARD_BODY.size * 1.3)
 
-        # Features with dots
-        feat_x = cx + icon_sz + int(width * 0.03)
-        feat_y = cy + card_h - int(card_h * 0.2)
-        dot_r = int(width * 0.004)
+        # Feature tags (below description, with dynamic gap)
+        ty += int(s * 0.008)
+        dot_r = max(3, s // 240)
         for fi, feat in enumerate(tier.get("features", [])):
-            fx = feat_x + fi * int(width * 0.2)
-            draw.ellipse([fx, feat_y - dot_r, fx + 2 * dot_r, feat_y + dot_r],
-                         fill=(*card_color[:3], 255))
-            draw.text((fx + int(width * 0.012), feat_y - int(FONT_FEATURE.size * 0.3)),
-                      feat, fill=(*card_color[:3], 255), font=FONT_FEATURE)
+            fx = ix + fi * int(s * 0.18)
+            draw.ellipse([fx - dot_r, ty - dot_r // 2, fx + dot_r, ty + dot_r // 2],
+                         fill=accent)
+            draw.text((fx + int(s * 0.01), ty - int(FONT_FEATURE.size * 0.4)),
+                      feat, fill=accent, font=FONT_FEATURE)
 
     # ── FOOTER ────────────────────────────────────────────────
     footer = ls["footer"]
-    footer_h = int(height * 0.13)
     footer_y = height - footer_h
     draw.rectangle([(0, footer_y), (width, height)], fill=hr(footer["background_color"]))
 
     fe = footer["elements"]
     elem_w = (width - 2 * margin) // len(fe)
-    elem_h = footer_h // 2
 
     for i, el in enumerate(fe):
         ex = margin + i * elem_w
-        ey = footer_y + (footer_h - elem_h) // 2
+        ey = footer_y + int(footer_h * 0.12)
 
         if el["type"] == "cta_button":
-            btn_w = int(elem_w * 0.75)
+            btn_w = int(elem_w * 0.6)
             btn_h = int(footer_h * 0.4)
             btn_x = ex + (elem_w - btn_w) // 2
-            btn_y = ey + (elem_h - btn_h) // 2
+            btn_y = ey + int(footer_h * 0.05)
             draw_rounded_rect(draw, (btn_x, btn_y, btn_x + btn_w, btn_y + btn_h),
                               radius=btn_h // 2, fill=hr(el["background_color"]))
             bbox = draw.textbbox((0, 0), el["text"], font=FONT_CTA)
@@ -419,31 +446,32 @@ def render_design(spec, output_path, product_data=None, width=1080):
                       el["text"], fill=hr(el["text_color"]), font=FONT_CTA)
 
         elif el["type"] == "contact_info":
-            icon_r = int(width * 0.012)
-            icon_cx = ex + int(elem_w * 0.2)
-            icon_cy = ey + int(elem_h * 0.3)
+            icon_r = int(s * 0.01)
+            icon_cx = ex + int(elem_w * 0.18)
+            icon_cy = ey + int(footer_h * 0.15)
+            col = hr(el["icon_color"])
             draw.ellipse([icon_cx - icon_r, icon_cy - icon_r, icon_cx + icon_r, icon_cy + icon_r],
-                         outline=(*hr(el["icon_color"])[:3], 255), width=2)
+                         outline=(*col[:3], 255), width=lw_base)
             draw.line([icon_cx, icon_cy - icon_r, icon_cx, icon_cy + icon_r],
-                      fill=(*hr(el["icon_color"])[:3], 255), width=1)
-            label_x = ex + int(elem_w * 0.35)
-            draw.text((label_x, ey), el["label"], fill=(255, 255, 255, 200), font=FONT_FOOTER)
-            draw.text((label_x, ey + int(FONT_FOOTER.size * 1.2)),
-                      el["value"], fill=hr(el["text_color"]), font=FONT_FOOTER)
+                      fill=(*col[:3], 255), width=lw_base)
+            label_x = ex + int(elem_w * 0.28)
+            draw.text((label_x, ey), el["label"], fill=(255, 255, 255, 200), font=FONT_FOOTER_LBL)
+            draw.text((label_x, ey + int(FONT_FOOTER_LBL.size * 1.3)),
+                      el["value"], fill=hr(el["text_color"]), font=FONT_FOOTER_VAL)
 
         elif el["type"] == "website_info":
-            icon_r = int(width * 0.012)
-            icon_cx = ex + int(elem_w * 0.2)
-            icon_cy = ey + int(elem_h * 0.3)
+            icon_r = int(s * 0.01)
+            icon_cx = ex + int(elem_w * 0.18)
+            icon_cy = ey + int(footer_h * 0.15)
             draw.ellipse([icon_cx - icon_r, icon_cy - icon_r, icon_cx + icon_r, icon_cy + icon_r],
-                         outline=(*hr(el["icon_color"])[:3], 255), width=2)
-            label_x = ex + int(elem_w * 0.35)
-            draw.text((label_x, ey), el["label"], fill=(255, 255, 255, 200), font=FONT_FOOTER)
-            draw.text((label_x, ey + int(FONT_FOOTER.size * 1.2)),
-                      el["value"], fill=hr(el["text_color"]), font=FONT_FOOTER)
+                         outline=(*hr(el["icon_color"])[:3], 255), width=lw_base)
+            label_x = ex + int(elem_w * 0.28)
+            draw.text((label_x, ey), el["label"], fill=(255, 255, 255, 200), font=FONT_FOOTER_LBL)
+            draw.text((label_x, ey + int(FONT_FOOTER_LBL.size * 1.3)),
+                      el["value"], fill=hr(el["text_color"]), font=FONT_FOOTER_VAL)
 
-    # Copyright line
-    cp_y = footer_y + footer_h - int(FONT_FOOTER_CP.size * 1.5)
+    # Copyright
+    cp_y = footer_y + footer_h - int(FONT_FOOTER_CP.size * 1.6)
     cp_text = footer.get("copyright", "")
     bbox = draw.textbbox((0, 0), cp_text, font=FONT_FOOTER_CP)
     tw = bbox[2] - bbox[0]
@@ -456,17 +484,17 @@ def render_design(spec, output_path, product_data=None, width=1080):
     elapsed = time.time() - start
     print(f"Design rendered in {elapsed:.2f}s")
     print(f"Saved: {output_path}")
-    print(f"Size: {width}x{height} ({aspect})")
+    print(f"Size: {width}x{height}")
     return True
 
 
 def main():
     parser = argparse.ArgumentParser(description="Generate Venturo-branded catalog design illustration")
-    parser.add_argument("--spec", help="JSON spec string (default: Venturo brand spec)")
+    parser.add_argument("--spec", help="JSON spec string")
     parser.add_argument("--spec-file", type=Path, help="Path to JSON spec file")
     parser.add_argument("--output", required=True, help="Output PNG path")
-    parser.add_argument("--width", type=int, default=1080, help="Base width (height auto from aspect ratio)")
-    parser.add_argument("--product-data", type=Path, help="JSON file with tier/package data array")
+    parser.add_argument("--size", type=int, default=3840, help="Canvas width/height in px (default 3840 = 4K)")
+    parser.add_argument("--product-data", type=Path, help="JSON file with tier/package data")
     args = parser.parse_args()
 
     spec = DEFAULT_SPEC
@@ -481,7 +509,7 @@ def main():
         with open(args.product_data) as f:
             products = json.load(f)
 
-    ok = render_design(spec, args.output, products, args.width)
+    ok = render_design(spec, args.output, products, args.size)
     sys.exit(0 if ok else 1)
 
 
