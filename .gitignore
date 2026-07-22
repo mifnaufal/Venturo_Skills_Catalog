@@ -1,1 +1,4 @@
-venturo-poster/config/cookies.json
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/

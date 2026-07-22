@@ -206,6 +206,5 @@ Confirm with the user before writing the final file. Then display:
 | `assets/image_1c155d.png` | Official Venturo logo |
 | `scripts/generate_design.py` | Programmatic design illustration renderer (Pillow, 4K) |
 | `scripts/composite_logo.py` | Logo compositing with auto position detection |
-| `scripts/generate_base.py` | Legacy Dreamina browser automation (deprecated) |
 | `templates/packages_context.md` | Venturo service tier reference with sales copy |
 | `output/` | Generated catalog images |
