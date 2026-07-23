@@ -1,11 +1,11 @@
 # Venturo WhatsApp Business Catalog — Antigravity Plugin
 
-Generate **WhatsApp Business catalog images** for Venturo's software development packages using **Dreamina AI** (via Playwright MCP browser automation). Logo Venturo diupload sebagai reference image, AI composite otomatis.
+Generate **WhatsApp Business catalog images** for Venturo's software development packages using **Qwen-Image-2.0-Pro** (via ImageRouter API). Logo Venturo dikirim sebagai reference image, AI composite otomatis.
 
 ## Prerequisites
 
 - Python 3.8+
-- Playwright + Chromium: `pip install -r venturo-poster/mcp-playwright/requirements.txt && playwright install chromium`
+- ImageRouter API key: daftar di https://imagerouter.io/api-keys
 
 ## Install
 
@@ -13,13 +13,17 @@ Generate **WhatsApp Business catalog images** for Venturo's software development
 git clone <repo-url>
 cd Venturo_Skills_Catalog
 pip install -r venturo-poster/mcp-playwright/requirements.txt
-playwright install chromium
 ./install.sh
 ```
 
 **Windows (PowerShell):**
 ```powershell
 .\install.ps1
+```
+
+**Setelah install, isi API key di mcp_config.json atau set environment variable:**
+```bash
+export IMAGE_ROUTER_API_KEY="ir_xxx..."
 ```
 
 ## Cara Pakai via Antigravity CLI
@@ -32,9 +36,9 @@ agy
 
 AI agent akan:
 1. Wawancara user (tier, preferensi desain, konten custom)
-2. Bangun prompt detail untuk Dreamina
+2. Bangun prompt detail untuk Qwen-Image
 3. Tampilkan preview spec untuk approval
-4. Jalankan Playwright MCP untuk login, upload logo, generate, screenshot
+4. Generate via ImageRouter API (Qwen-Image-2.0-Pro) — < 10 detik
 5. Kirim hasil ke user
 
 ## MCP Server Configuration
@@ -47,7 +51,9 @@ Daftarkan MCP server di Antigravity config (`~/.gemini/config/antigravity.json`)
     "venturo-poster-playwright": {
       "command": "python3",
       "args": ["<absolute_path>/mcp-playwright/server.py"],
-      "env": {}
+      "env": {
+        "IMAGE_ROUTER_API_KEY": "ir_xxx..."
+      }
     }
   }
 }
@@ -69,7 +75,7 @@ venturo-poster/
 ├── skills/venturo-poster/SKILL.md    # AI agent skill definition
 ├── assets/image_1c155d.png           # Venturo logo (reference untuk AI)
 ├── mcp-playwright/
-│   ├── server.py                     # Playwright MCP server
+│   ├── server.py                     # ImageRouter MCP server (API-based)
 │   └── requirements.txt              # Python dependencies
 ├── templates/packages_context.md     # Service tier reference
 ├── output/                           # Generated images

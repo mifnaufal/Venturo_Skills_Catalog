@@ -54,7 +54,7 @@ Write-Host "  Creating Python virtual environment..."
 python -m venv $VenvDir 2>&1 | Out-Null
 Write-Host "✔ Virtual environment created at $VenvDir" -ForegroundColor Green
 
-# 5. Install MCP + Playwright dependencies
+# 5. Install MCP + HTTP dependencies (no Playwright/Chromium needed)
 $InstalledReq = Join-Path $PluginDir "mcp-playwright/requirements.txt"
 Write-Host ""
 Write-Host "  Installing Python dependencies..."
@@ -66,22 +66,7 @@ if ($LASTEXITCODE -ne 0) {
     Write-Host "✔ Python dependencies installed" -ForegroundColor Green
 }
 
-# 6. Install Chromium
-Write-Host ""
-Write-Host "  Installing Chromium browser..."
-try {
-    $check = & $VenvPython -c "from playwright.sync_api import sync_playwright; print('OK')" 2>&1
-    if ($check -eq "OK") {
-        Write-Host "✔ Playwright ready" -ForegroundColor Green
-    } else {
-        & $VenvPython -m playwright install chromium 2>&1 | Out-Null
-        Write-Host "✔ Chromium installed" -ForegroundColor Green
-    }
-} catch {
-    Write-Host "  Run: $VenvPython -m playwright install chromium" -ForegroundColor Yellow
-}
-
-# 7. Create mcp_config.json for auto-MCP registration
+# 6. Create mcp_config.json for auto-MCP registration
 Write-Host ""
 Write-Host "  Registering MCP server..."
 $mcpDirs = @($PluginDir, $PluginDirCli)
@@ -94,7 +79,9 @@ foreach ($d in $mcpDirs) {
     "venturo-poster-playwright": {
       "command": "$VenvPython",
       "args": ["$serverPy"],
-      "env": {}
+      "env": {
+        "IMAGE_ROUTER_API_KEY": ""
+      }
     }
   }
 }
@@ -102,7 +89,7 @@ foreach ($d in $mcpDirs) {
 }
 Write-Host "✔ MCP config registered for plugin" -ForegroundColor Green
 
-# 8. Show MCP status
+# 7. Show MCP status
 Write-Host ""
 Write-Host "============================================" -ForegroundColor Cyan
 Write-Host "  MCP Server Auto-Registered" -ForegroundColor Cyan
@@ -114,6 +101,10 @@ Write-Host "    $PluginDirCli\mcp_config.json"
 Write-Host ""
 Write-Host "  Menggunakan Python: $VenvPython"
 Write-Host ""
+Write-Host "  ⚠️  Jangan lupa set IMAGE_ROUTER_API_KEY di mcp_config.json"
+Write-Host "     atau via environment variable."
+Write-Host "     Dapatkan API key di: https://imagerouter.io/api-keys"
+Write-Host ""
 Write-Host "  Antigravity akan auto-load MCP server saat plugin aktif."
 Write-Host ""
 Write-Host "  Jika ingin manual, tambahkan ke antigravity.json:"
@@ -122,7 +113,9 @@ Write-Host '    "mcpServers": {'
 Write-Host '      "venturo-poster-playwright": {'
 Write-Host "        \`"command\`": \`"$VenvPython\`","
 Write-Host "        \`"args\`": [\`"$PluginDir\mcp-playwright\server.py\`"],"
-Write-Host '        "env": {}'
+Write-Host '        "env": {'
+Write-Host '          "IMAGE_ROUTER_API_KEY": "ir_xxx..."'
+Write-Host '        }'
 Write-Host '      }'
 Write-Host '    }'
 Write-Host '  }'
@@ -130,11 +123,14 @@ Write-Host ""
 Write-Host "  Verifikasi: agy plugin list"
 Write-Host ""
 
-# 9. Done
+# 8. Done
 Write-Host "✔ Venturo Poster — siap digunakan!" -ForegroundColor Green
 Write-Host ""
 Write-Host "Cara pakai:"
 Write-Host "  agy"
 Write-Host "  → ketik: /venturo-poster"
 Write-Host "  → atau:  buat katalog WhatsApp buat Venturo"
+Write-Host ""
+Write-Host "Engine: Qwen-Image-2.0-Pro via ImageRouter API"
+Write-Host "(sebelumnya: Dreamina via Playwright browser automation)"
 Write-Host ""

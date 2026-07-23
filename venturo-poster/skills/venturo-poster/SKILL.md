@@ -1,13 +1,13 @@
 ---
 name: venturo-poster
-description: Generate WhatsApp Business catalog images for Venturo's software development service packages. Triggers on "catalog wa", "katalog whatsapp", "buat katalog", "catalog venturo", "Dreamina catalog". Enforces an interactive Art Director interview before any image generation.
+description: Generate WhatsApp Business catalog images for Venturo's software development service packages. Triggers on "catalog wa", "katalog whatsapp", "buat katalog", "catalog venturo". Enforces an interactive Art Director interview before any image generation.
 ---
 
 # Venturo WhatsApp Business Catalog Generator
 
-Generate **WhatsApp Business catalog images** for Venturo — an Indonesian software development company — using **Dreamina AI** via Playwright MCP browser automation.
+Generate **WhatsApp Business catalog images** for Venturo — an Indonesian software development company — using **Qwen-Image-2.0-Pro** via ImageRouter API.
 
-**Engine:** Dreamina AI (online, via Playwright MCP browser automation)
+**Engine:** Qwen-Image-2.0-Pro (via ImageRouter API — imagerouter.io)
 
 ## Design System (Venturo Brand)
 
@@ -24,7 +24,7 @@ Generate **WhatsApp Business catalog images** for Venturo — an Indonesian soft
 
 ## Output Specs
 
-- **Size:** Square 1:1 (Dreamina default aspect ratio)
+- **Size:** 1024x1024 (square 1:1)
 - **Format:** PNG
 - **Style:** WhatsApp Business catalog — clean, professional, modern, minimal
 - **Language:** Bahasa Indonesia
@@ -48,32 +48,22 @@ Sebelum memulai generation, pastikan:
        "venturo-poster-playwright": {
          "command": "python3",
          "args": ["<plugin_path>/mcp-playwright/server.py"],
-         "env": {}
+         "env": {
+           "IMAGE_ROUTER_API_KEY": "ir_xxx..."
+         }
        }
      }
    }
    ```
 2. **Dependencies sudah terinstall** (`pip install -r <plugin_path>/mcp-playwright/requirements.txt`)
-3. **Chromium sudah terinstall** (`playwright install chromium`)
+3. **API key ImageRouter sudah diisi** di environment variable `IMAGE_ROUTER_API_KEY`
 
 ## Available MCP Tools
 
 | Tool | Description |
 |------|-------------|
-| `browser_start` | Launch Chromium browser |
-| `browser_stop` | Close browser and cleanup |
-| `browser_navigate(url)` | Go to a URL |
-| `browser_click(selector)` | Click first visible element matching CSS selector |
-| `browser_fill(selector, text)` | Fill an input/textarea with text |
-| `browser_upload_file(file_path)` | Upload file via file input |
-| `browser_screenshot(output_path)` | Take full-page screenshot |
-| `browser_wait(duration_ms)` | Wait for N milliseconds |
-| `browser_wait_for_url(pattern, timeout_ms)` | Wait until URL matches regex |
-| `browser_evaluate(script)` | Run JavaScript in page |
-| `dreamina_login(email, password)` | Login to Dreamina with email (NOT Google). Multi-fallback selectors. |
-| `dreamina_upload_reference()` | Upload Venturo logo as reference image. Multi-fallback. |
-| `dreamina_fill_prompt(prompt)` | Fill Dreamina prompt textarea. Multi-fallback. |
-| `dreamina_click_generate()` | Click "Generate" button. Multi-fallback. |
+| `generate_catalog(prompt, tier)` | Generate catalog image via Qwen-Image-2.0-Pro. Sends prompt + Venturo logo (as reference) to ImageRouter API, saves result PNG to output/. |
+| `check_balance()` | Check remaining ImageRouter credit balance. |
 
 ## Workflow (mandatory — follow in order)
 
@@ -92,7 +82,7 @@ Frame questions in **Bahasa Indonesia**. Show you understand their business cont
 
 Read `templates/packages_context.md` for tier-specific themes and visual mapping.
 
-Generate a **concise, visual-focused Dreamina prompt** in English (Dreamina renders English better for text). The prompt MUST follow this structure:
+Generate a **detail-rich prompt in English** (Qwen renders text better in English). The prompt MUST follow this structure:
 
 ```
 WhatsApp Business catalog image, square 1:1, {tier} package.
@@ -133,93 +123,45 @@ DO NOT include: people faces, long paragraphs, busy backgrounds, cartoonish elem
 
 ### Phase 3: Preview Spec (NO GENERATION)
 
-Tampilkan **final prompt** yang akan dikirim ke Dreamina (English, visual-focused), plus reference images:
+Tampilkan **final prompt** yang akan dikirim (English, visual-focused), plus reference images:
 
 1. **Final prompt** (tampilkan LENGKAP, jangan dipotong)
-2. The Venturo logo (`assets/image_1c155d.png`) — uploaded as reference, AI composites it naturally
-3. **Ask for approval:** "Apakah spec ini sesuai? Saya akan generate via Dreamina dengan referensi logo Venturo. Lanjut?"
+2. The Venturo logo (`assets/image_1c155d.png`) — dikirim sebagai reference image ke API, AI composites naturally
+3. **Ask for approval:** "Apakah spec ini sesuai? Saya akan generate via ImageRouter API dengan model Qwen-Image-2.0-Pro dan referensi logo Venturo. Lanjut?"
 
 ### Phase 4: User Approval
 
 Wait for explicit "lanjut" / "yes" / "setuju" before proceeding.
 
-### Phase 5: Generation via Playwright MCP
+### Phase 5: Generation via ImageRouter API
 
-1. Minta user input Dreamina **email & password** (login via email, BUKAN Google).
-   Gunakan environment variable `DREAMINA_EMAIL` dan `DREAMINA_PASSWORD` jika tersedia.
+Panggil MCP tools secara berurutan:
 
-2. Panggil MCP tools secara berurutan:
+**Step 1 — Generate:**
+```
+generate_catalog(prompt="{full prompt dari Phase 2/3 — LENGKAP, jangan dipotong}", tier="{starter|growth|enterprise}")
+```
 
-   **Step 1 — Start browser:**
-   ```
-   browser_start(headless=false)
-   ```
-   Jika gagal: "Gagal launch browser. Pastikan Chromium sudah terinstall."
+Tool ini akan:
+1. Load logo Venturo as data URI
+2. Kirim POST request ke ImageRouter API dengan model `qwen/qwen-image-2-pro`
+3. Download hasil gambar ke `venturo-poster/output/`
+4. Return path file
 
-   **Step 2 — Navigate to login page:**
-   ```
-   browser_navigate("https://dreamina.capcut.com/ai-tool/home?need_login=true&type=image&workspace=0")
-   ```
-   Jika gagal: coba `browser_navigate("https://dreamina.capcut.com/")` lalu cari tombol sign in manual.
+Jika gagal:
+- "IMAGE_ROUTER_API_KEY not set" → "API key belum diatur. Set environment variable IMAGE_ROUTER_API_KEY."
+- Error API lain → tampilkan detail error dari respons
 
-   **Step 3 — Login to Dreamina (email only, NOT Google):**
-   ```
-   dreamina_login(email, password)
-   ```
-   Tool ini akan auto-fill email & password form dan submit.
-   Jika gagal: "Auto-login gagal. Silakan login manual di browser, lalu beri tahu saya setelah selesai." Lanjut ke step 4 setelah user konfirmasi.
-
-   **Step 4 — Navigate to AI image tool:**
-   ```
-   browser_navigate("https://dreamina.capcut.com/ai-tool/image")
-   browser_wait(3000)
-   ```
-
-   **Step 5 — Upload logo reference:**
-   ```
-   dreamina_upload_reference()
-   ```
-   Jika gagal: minta user upload logo manual dari `assets/image_1c155d.png`, lalu `browser_wait(30000)`.
-
-   **Step 6 — Fill prompt:**
-   ```
-   dreamina_fill_prompt("{full prompt dari Phase 2/3 — LENGKAP, jangan dipotong}")
-   ```
-   Jika gagal: "Tolong paste prompt ini ke Dreamina: {prompt}"
-   Lalu `browser_wait(30000)`.
-
-   **Step 7 — Click Generate:**
-   ```
-   dreamina_click_generate()
-   ```
-   Jika gagal: "Tolong klik tombol Generate di browser."
-
-   **Step 8 — Wait for generation:**
-   ```
-   browser_wait(180000)
-   ```
-   Tunggu ±3 menit. Jika user merasa sudah selesai, bisa lanjut lebih cepat.
-
-   **Step 9 — Screenshot:**
-   ```
-   browser_screenshot("venturo-poster/output/dreamina_{tier}.png")
-   ```
-
-   **Step 10 — Cleanup:**
-   ```
-   browser_stop()
-   ```
-
-> **CRITICAL:** Kirim prompt final (visual-focused, English) ke Dreamina via `dreamina_fill_prompt`. Jangan dipotong/diringkas. Pastikan semua elemen (Main Visual, Composition, Text, Color, Mood, preferensi user) masuk semua.
+> **CRITICAL:** Kirim prompt final (English, visual-focused) via `generate_catalog()`. Jangan dipotong/diringkas. Pastikan semua elemen (Main Visual, Composition, Text, Color, Mood, preferensi user) masuk semua.
 
 ### Phase 6: Delivery
 
 ```
 ✔ Katalog berhasil dibuat! Tersimpan di:
-  venturo-poster/output/dreamina_starter.png
+  venturo-poster/output/venturo_{tier}_{timestamp}.png
 
-  Resolusi: 1:1 square (Dreamina)
-  Engine: Dreamina AI (Playwright MCP)
+  Resolusi: 1024x1024 (1:1)
+  Engine: Qwen-Image-2.0-Pro (via ImageRouter API)
   Logo: AI-composited from reference image
 ```
 
@@ -227,13 +169,12 @@ Wait for explicit "lanjut" / "yes" / "setuju" before proceeding.
 
 - **Always** run the interview phase first. Never skip to generation.
 - **Never generate immediately after interview.** Show preview spec and get approval first.
-- **Do NOT generate or composite the logo separately.** The Venturo logo is uploaded as a reference image to Dreamina and AI composites it naturally into the design.
-- **Do NOT use Pillow or other local rendering.** The Dreamina AI engine handles ALL visual generation.
+- **Do NOT generate or composite the logo separately.** The Venturo logo is sent as a reference image to the API and AI composites it naturally into the design.
+- **Do NOT use Pillow or other local rendering.** The Qwen-Image model handles ALL visual generation.
 - **Always** include the Venturo logo reference in the prompt instructions.
-- **Gunakan English untuk prompt** (Dreamina render teks lebih baik dalam English), tapi konten katalog tetap Bahasa Indonesia.
-- **Login via email, NOT Google.** Jangan klik tombol Google login. Gunakan `dreamina_login()` yang sudah auto-fill email + password.
+- **Gunakan English untuk prompt** (Qwen render teks lebih baik dalam English), tapi konten katalog tetap Bahasa Indonesia.
 - **Prompt harus visual-focused, bukan business copy.** Fokus pada deskripsi visual, komposisi, warna, dan mood. Jangan menyertakan blok teks panjang (Masalah/Solusi/Hasil) — itu bukan untuk image prompt. Incorporate preferensi user ke bagian composition/color/mood.
-- **Jika MCP tool gagal**, coba sekali lagi. Jika tetap gagal, minta user melakukan step tersebut manual di browser.
+- **Jika MCP tool gagal**, tampilkan error detailnya ke user dan tawarkan untuk coba lagi.
 
 ## MCP Server Configuration
 
@@ -245,13 +186,16 @@ Tambahkan MCP server ini ke Antigravity config (`~/.gemini/config/antigravity.js
     "venturo-poster-playwright": {
       "command": "python3",
       "args": ["<absolute_path>/mcp-playwright/server.py"],
-      "env": {}
+      "env": {
+        "IMAGE_ROUTER_API_KEY": "<your_api_key>"
+      }
     }
   }
 }
 ```
 
 Ganti `<absolute_path>` dengan path lengkap ke `venturo-poster/mcp-playwright/server.py`.
+Ganti `<your_api_key>` dengan ImageRouter API key (dapatkan di https://imagerouter.io/api-keys).
 
 ## File Reference
 
@@ -259,8 +203,8 @@ Ganti `<absolute_path>` dengan path lengkap ke `venturo-poster/mcp-playwright/se
 |------|---------|
 | `plugin.json` | Plugin manifest |
 | `skills/venturo-poster/SKILL.md` | This skill definition |
-| `assets/image_1c155d.png` | Official Venturo logo (uploaded as reference to Dreamina) |
-| `mcp-playwright/server.py` | Playwright MCP server — browser automation tools |
+| `assets/image_1c155d.png` | Official Venturo logo (sent as reference to ImageRouter API) |
+| `mcp-playwright/server.py` | ImageRouter MCP server — API-based image generation |
 | `mcp-playwright/requirements.txt` | Python dependencies for MCP server |
 | `templates/packages_context.md` | Venturo service tier reference with sales copy |
 | `output/` | Generated catalog images |

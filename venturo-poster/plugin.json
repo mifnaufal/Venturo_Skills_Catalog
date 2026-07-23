@@ -1,6 +1,6 @@
 {
   "$schema": "https://antigravity.google/schemas/v1/plugin.json",
   "name": "venturo-poster",
-  "description": "Generate WhatsApp Business catalog images for Venturo software packages (Starter/Growth/Enterprise) using Dreamina AI via Playwright MCP. Triggers: catalog wa, katalog whatsapp, buat katalog, catalog venturo, poster venturo.",
-  "keywords": ["venturo", "catalog", "katalog", "whatsapp", "wa", "poster", "dreamina"]
+  "description": "Generate WhatsApp Business catalog images for Venturo software packages (Starter/Growth/Enterprise) using Qwen-Image-2.0-Pro via ImageRouter API. Triggers: catalog wa, katalog whatsapp, buat katalog, catalog venturo, poster venturo.",
+  "keywords": ["venturo", "catalog", "katalog", "whatsapp", "wa", "poster", "imagerouter", "qwen"]
 }
