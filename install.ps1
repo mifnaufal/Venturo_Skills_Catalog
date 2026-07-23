@@ -45,18 +45,38 @@ Write-Host "✔ Plugin copied to:" -ForegroundColor Green
 Write-Host "  • $PluginDir" -ForegroundColor Green
 Write-Host "  • $PluginDirCli" -ForegroundColor Green
 
-# 4. Install MCP + Playwright dependencies
+# 4. Create mcp_config.json for auto-MCP registration
+$mcpDirs = @($PluginDir, $PluginDirCli)
+foreach ($d in $mcpDirs) {
+    $mcpConfig = Join-Path $d "mcp_config.json"
+    $serverPy  = Join-Path $d "mcp-playwright/server.py"
+    @"
+{
+  "mcpServers": {
+    "venturo-poster-playwright": {
+      "command": "python3",
+      "args": ["$serverPy"],
+      "env": {}
+    }
+  }
+}
+"@ | Set-Content -Path $mcpConfig
+}
+Write-Host "✔ MCP config registered for plugin" -ForegroundColor Green
+
+# 5. Install MCP + Playwright dependencies
+$InstalledReq = Join-Path $PluginDir "mcp-playwright/requirements.txt"
 Write-Host ""
 Write-Host "  Installing Python dependencies..."
 try {
-    pip install -r $McpReq 2>&1 | Out-Null
+    pip install -r $InstalledReq 2>&1 | Out-Null
     Write-Host "✔ Python dependencies installed" -ForegroundColor Green
 } catch {
     Write-Host "  pip install failed: $_" -ForegroundColor Yellow
-    Write-Host "  Run manually: pip install -r $McpReq" -ForegroundColor Yellow
+    Write-Host "  Run manually: pip install -r $InstalledReq" -ForegroundColor Yellow
 }
 
-# 5. Install Chromium
+# 6. Install Chromium
 Write-Host ""
 Write-Host "  Installing Chromium browser..."
 try {
@@ -71,27 +91,33 @@ try {
     Write-Host "  Run: playwright install chromium" -ForegroundColor Yellow
 }
 
-# 6. Show MCP config instructions
-$ServerPath = Resolve-Path (Join-Path $PluginSrc "mcp-playwright\server.py")
+# 7. Show MCP status
 Write-Host ""
 Write-Host "============================================" -ForegroundColor Cyan
-Write-Host "  MCP Server Configuration" -ForegroundColor Cyan
+Write-Host "  MCP Server Auto-Registered" -ForegroundColor Cyan
 Write-Host "============================================" -ForegroundColor Cyan
 Write-Host ""
-Write-Host "  Tambahkan ke Antigravity config (~\.gemini\config\antigravity.json):"
+Write-Host "  Plugin mcp_config.json sudah dibuat di:"
+Write-Host "    $PluginDir\mcp_config.json"
+Write-Host "    $PluginDirCli\mcp_config.json"
 Write-Host ""
+Write-Host "  Antigravity akan auto-load MCP server saat plugin aktif."
+Write-Host ""
+Write-Host "  Jika ingin manual, tambahkan ke antigravity.json:"
 Write-Host '  {'
 Write-Host '    "mcpServers": {'
 Write-Host '      "venturo-poster-playwright": {'
 Write-Host '        "command": "python",'
-Write-Host "        `"args`": [`"$ServerPath`"],"
+Write-Host "        \`"args\`": [\`"$PluginDir\mcp-playwright\server.py\`"],"
 Write-Host '        "env": {}'
 Write-Host '      }'
 Write-Host '    }'
 Write-Host '  }'
 Write-Host ""
+Write-Host "  Verifikasi: agy plugin list"
+Write-Host ""
 
-# 7. Done
+# 8. Done
 Write-Host "✔ Venturo Poster — siap digunakan!" -ForegroundColor Green
 Write-Host ""
 Write-Host "Cara pakai:"

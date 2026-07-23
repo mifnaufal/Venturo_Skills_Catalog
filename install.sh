@@ -59,13 +59,29 @@ echo -e "${GREEN}✔ Plugin copied to${NC}"
 echo -e "${GREEN}  • $PLUGIN_DIR${NC}"
 echo -e "${GREEN}  • $PLUGIN_DIR_CLI${NC}"
 
-# 5. Install MCP + Playwright dependencies
+# 5. Create mcp_config.json for auto-MCP registration
+for dir in "$PLUGIN_DIR" "$PLUGIN_DIR_CLI"; do
+    cat > "$dir/mcp_config.json" << MCPEOF
+{
+  "mcpServers": {
+    "venturo-poster-playwright": {
+      "command": "python3",
+      "args": ["$dir/mcp-playwright/server.py"],
+      "env": {}
+    }
+  }
+}
+MCPEOF
+done
+echo -e "${GREEN}✔ MCP config registered for plugin${NC}"
+
+# 6. Install MCP + Playwright dependencies
 echo ""
 echo "  Installing Python dependencies..."
-pip3 install -r "$PLUGIN_SRC/mcp-playwright/requirements.txt" || pip install -r "$PLUGIN_SRC/mcp-playwright/requirements.txt"
+pip3 install -r "$PLUGIN_DIR/mcp-playwright/requirements.txt" || pip install -r "$PLUGIN_DIR/mcp-playwright/requirements.txt"
 echo -e "${GREEN}✔ Python dependencies installed${NC}"
 
-# 6. Install Chromium
+# 7. Install Chromium
 echo ""
 echo "  Installing Chromium browser..."
 if python3 -c "from playwright.sync_api import sync_playwright; print('OK')" 2>/dev/null; then
@@ -75,26 +91,33 @@ else
     echo -e "${GREEN}✔ Chromium installed${NC}"
 fi
 
-# 7. Show MCP config instructions
+# 8. Show MCP status
 echo ""
 echo -e "${CYAN}============================================${NC}"
-echo -e "${CYAN}  MCP Server Configuration${NC}"
+echo -e "${CYAN}  MCP Server Auto-Registered${NC}"
 echo -e "${CYAN}============================================${NC}"
 echo ""
-echo "  Tambahkan ke Antigravity config (~/.gemini/config/antigravity.json):"
+echo "  Plugin mcp_config.json sudah dibuat di:"
+echo "    $PLUGIN_DIR/mcp_config.json"
+echo "    $PLUGIN_DIR_CLI/mcp_config.json"
 echo ""
+echo "  Antigravity akan auto-load MCP server saat plugin aktif."
+echo ""
+echo "  Jika ingin manual, tambahkan ke antigravity.json:"
 echo '  {'
 echo '    "mcpServers": {'
 echo '      "venturo-poster-playwright": {'
 echo '        "command": "python3",'
-echo '        "args": ["'$(realpath "$PLUGIN_SRC/mcp-playwright/server.py")'"],'
+echo '        "args": ["'"$PLUGIN_DIR/mcp-playwright/server.py"'"],'
 echo '        "env": {}'
 echo '      }'
 echo '    }'
 echo '  }'
 echo ""
+echo "  Verifikasi: agy plugin list"
+echo ""
 
-# 8. Done
+# 9. Done
 echo -e "${GREEN}✔ Venturo Poster — siap digunakan!${NC}"
 echo ""
 echo "Cara pakai:"
