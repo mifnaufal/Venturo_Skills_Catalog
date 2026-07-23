@@ -3,23 +3,24 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PLUGIN_SRC="$SCRIPT_DIR/venturo-poster"
-PLUGIN_DIR="$HOME/.gemini/config/plugins/venturo-poster"
-PLUGIN_DIR_CLI="$HOME/.gemini/antigravity-cli/plugins/venturo-poster"
-VENV_DIR="$PLUGIN_DIR/.venv"
+VENV_DIR="$SCRIPT_DIR/.venv"
 VENV_PYTHON="$VENV_DIR/bin/python3"
 VENV_PIP="$VENV_DIR/bin/pip"
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 CYAN='\033[0;36m'
+YELLOW='\033[1;33m'
 NC='\033[0m'
 
 echo -e "${CYAN}============================================${NC}"
-echo -e "${CYAN}  Venturo Poster — Antigravity Plugin Install${NC}"
+echo -e "${CYAN}  Venturo Poster — Multi-Platform Install${NC}"
 echo -e "${CYAN}============================================${NC}"
 echo ""
 
+# ──────────────────────────────────────
 # 1. Validate dependencies
+# ──────────────────────────────────────
 if ! command -v python3 &>/dev/null; then
     echo -e "${RED}ERROR: Python 3 not found. Install Python 3.8+ first.${NC}"
     exit 1
@@ -33,7 +34,9 @@ else
     exit 1
 fi
 
-# 2. Validate plugin files
+# ──────────────────────────────────────
+# 2. Validate project files
+# ──────────────────────────────────────
 if [ ! -f "$PLUGIN_SRC/plugin.json" ]; then
     echo -e "${RED}ERROR: venturo-poster/plugin.json not found${NC}"
     exit 1
@@ -47,41 +50,72 @@ if [ ! -f "$PLUGIN_SRC/mcp-playwright/requirements.txt" ]; then
     exit 1
 fi
 
-# 3. Remove stale plugin directories
-for dir in "$PLUGIN_DIR" "$PLUGIN_DIR_CLI"; do
+# ──────────────────────────────────────
+# 3. Install Python dependencies (shared venv)
+# ──────────────────────────────────────
+echo ""
+echo "  Creating Python virtual environment..."
+python3 -m venv "$VENV_DIR" >/dev/null 2>&1
+echo -e "${GREEN}✔ Virtual environment at $VENV_DIR${NC}"
+
+echo ""
+echo "  Installing Python dependencies..."
+"$VENV_PIP" install -r "$PLUGIN_SRC/mcp-playwright/requirements.txt" >/dev/null 2>&1
+echo -e "${GREEN}✔ Python dependencies installed${NC}"
+
+# ──────────────────────────────────────
+# 4. Register MCP server for Claude Code (user scope)
+# ──────────────────────────────────────
+echo ""
+echo -e "${CYAN}--- Claude Code ---${NC}"
+if command -v claude &>/dev/null; then
+    # Check if already registered
+    if claude mcp list 2>/dev/null | grep -q "venturo-poster"; then
+        echo -e "  MCP server 'venturo-poster' already registered."
+    else
+        echo "  Registering MCP server 'venturo-poster'..."
+        claude mcp add --scope user venturo-poster \
+            -- "$VENV_PYTHON" "$PLUGIN_SRC/mcp-playwright/server.py" 2>/dev/null || {
+            echo -e "${YELLOW}  ⚠ Could not auto-register. Register manually:${NC}"
+            echo "    claude mcp add --scope user venturo-poster -- $VENV_PYTHON $PLUGIN_SRC/mcp-playwright/server.py"
+        }
+        echo -e "${GREEN}✔ MCP server registered for Claude Code${NC}"
+    fi
+else
+    echo -e "  Claude Code CLI not found. Skip auto-register."
+    echo "  Manual: claude mcp add --scope user venturo-poster -- $VENV_PYTHON $PLUGIN_SRC/mcp-playwright/server.py"
+fi
+
+# ──────────────────────────────────────
+# 5. Install for Antigravity (agy) — copy plugin + register
+# ──────────────────────────────────────
+echo ""
+echo -e "${CYAN}--- Antigravity (agy) ---${NC}"
+
+ANTIGRAVITY_PLUGIN_DIR="$HOME/.gemini/config/plugins/venturo-poster"
+ANTIGRAVITY_CLI_PLUGIN_DIR="$HOME/.gemini/antigravity-cli/plugins/venturo-poster"
+
+# Remove stale directories
+for dir in "$ANTIGRAVITY_PLUGIN_DIR" "$ANTIGRAVITY_CLI_PLUGIN_DIR"; do
     if [ -d "$dir" ]; then
         echo "  Removing old plugin from $dir..."
         rm -rf "$dir"
     fi
 done
 
-# 4. Copy fresh plugin
-cp -r "$PLUGIN_SRC" "$PLUGIN_DIR"
-cp -r "$PLUGIN_SRC" "$PLUGIN_DIR_CLI"
+# Copy plugin
+cp -r "$PLUGIN_SRC" "$ANTIGRAVITY_PLUGIN_DIR"
+cp -r "$PLUGIN_SRC" "$ANTIGRAVITY_CLI_PLUGIN_DIR"
 echo -e "${GREEN}✔ Plugin copied to${NC}"
-echo -e "${GREEN}  • $PLUGIN_DIR${NC}"
-echo -e "${GREEN}  • $PLUGIN_DIR_CLI${NC}"
+echo -e "${GREEN}  • $ANTIGRAVITY_PLUGIN_DIR${NC}"
+echo -e "${GREEN}  • $ANTIGRAVITY_CLI_PLUGIN_DIR${NC}"
 
-# 5. Create Python virtual environment
-echo ""
-echo "  Creating Python virtual environment..."
-python3 -m venv "$VENV_DIR" >/dev/null 2>&1
-echo -e "${GREEN}✔ Virtual environment created at $VENV_DIR${NC}"
-
-# 6. Install MCP + HTTP dependencies (no Playwright/Chromium needed)
-echo ""
-echo "  Installing Python dependencies..."
-"$VENV_PIP" install -r "$PLUGIN_DIR/mcp-playwright/requirements.txt" >/dev/null 2>&1
-echo -e "${GREEN}✔ Python dependencies installed${NC}"
-
-# 7. Create mcp_config.json for auto-MCP registration
-echo ""
-echo "  Registering MCP server..."
-for dir in "$PLUGIN_DIR" "$PLUGIN_DIR_CLI"; do
+# Create mcp_config.json for Antigravity (uses plugin-local venv structure)
+for dir in "$ANTIGRAVITY_PLUGIN_DIR" "$ANTIGRAVITY_CLI_PLUGIN_DIR"; do
     cat > "$dir/mcp_config.json" << MCPEOF
 {
   "mcpServers": {
-    "venturo-poster-playwright": {
+    "venturo-poster": {
       "command": "$VENV_PYTHON",
       "args": ["$dir/mcp-playwright/server.py"],
       "env": {
@@ -92,50 +126,38 @@ for dir in "$PLUGIN_DIR" "$PLUGIN_DIR_CLI"; do
 }
 MCPEOF
 done
-echo -e "${GREEN}✔ MCP config registered for plugin${NC}"
+echo -e "${GREEN}✔ MCP config registered for Antigravity plugin${NC}"
 
-# 8. Show MCP status
+# ──────────────────────────────────────
+# 6. OpenCode — already configured via repo files
+# ──────────────────────────────────────
+echo ""
+echo -e "${CYAN}--- OpenCode ---${NC}"
+echo -e "  ${GREEN}✔ Already configured!${NC}"
+echo "  • .mcp.json      — auto-load MCP server"
+echo "  • AGENTS.md       — project rules"
+echo "  • opencode.json   — project config"
+echo "  • .claude/skills/ — skill discovery"
+echo "  OpenCode auto-reads these at startup."
+
+# ──────────────────────────────────────
+# 7. Summary
+# ──────────────────────────────────────
 echo ""
 echo -e "${CYAN}============================================${NC}"
-echo -e "${CYAN}  MCP Server Auto-Registered${NC}"
+echo -e "${CYAN}  Install Complete${NC}"
 echo -e "${CYAN}============================================${NC}"
 echo ""
-echo "  Plugin mcp_config.json sudah dibuat di:"
-echo "    $PLUGIN_DIR/mcp_config.json"
-echo "    $PLUGIN_DIR_CLI/mcp_config.json"
+echo -e "  Engine: Qwen-Image-2.0-Pro (maxrouter.io)"
+echo -e "  Python: $VENV_PYTHON"
 echo ""
-echo "  Menggunakan Python: $VENV_PYTHON"
+echo -e "  ${YELLOW}⚠ Jangan lupa set API key:${NC}"
+echo "    1. cp .env.example .env"
+echo "    2. Isi IMAGE_ROUTER_API_KEY di .env"
+echo "    Dapatkan di: https://maxrouter.io"
 echo ""
-echo "  ⚠️  Jangan lupa set IMAGE_ROUTER_API_KEY di mcp_config.json"
-echo "     atau via environment variable."
-echo "     Dapatkan API key di: https://imagerouter.io/api-keys"
-echo ""
-echo "  Antigravity akan auto-load MCP server saat plugin aktif."
-echo ""
-echo "  Jika ingin manual, tambahkan ke antigravity.json:"
-echo '  {'
-echo '    "mcpServers": {'
-echo '      "venturo-poster-playwright": {'
-echo "        \"command\": \"$VENV_PYTHON\","
-echo '        "args": ["'"$PLUGIN_DIR/mcp-playwright/server.py"'"],'
-echo '        "env": {'
-echo '          "IMAGE_ROUTER_API_KEY": "ir_xxx..."'
-echo '        }'
-echo '      }'
-echo '    }'
-echo '  }'
-echo ""
-echo "  Verifikasi: agy plugin list"
-echo ""
-
-# 9. Done
-echo -e "${GREEN}✔ Venturo Poster — siap digunakan!${NC}"
-echo ""
-echo "Cara pakai:"
-echo "  agy"
-echo "  → ketik: /venturo-poster"
-echo "  → atau:  buat katalog WhatsApp buat Venturo"
-echo ""
-echo "Engine: Qwen-Image-2.0-Pro via ImageRouter API"
-echo "(sebelumnya: Dreamina via Playwright browser automation)"
+echo -e "  ${GREEN}Cara pakai:${NC}"
+echo "    Claude Code:  claude  →  'buat katalog WhatsApp'"
+echo "    OpenCode:     opencode  →  'buat katalog WhatsApp'"
+echo "    Antigravity:  agy  →  'buat katalog WhatsApp'"
 echo ""

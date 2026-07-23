@@ -54,69 +54,53 @@ Use this reference to enrich AI image prompts. Match the user's chosen tier with
 
 ## Visual Prompt Mapping by Package
 
-Use these to build the Dreamina prompt (visual-focused, English) based on the user's chosen tier.
+Use these to enrich AI image prompts. Match the user's chosen tier with the mapped visual themes. **WAJIB sertakan "square 1:1" atau "ukuran 1:1" di setiap prompt.**
 
 ### Starter Package
 
 **Target audience:** UMKM, startups, simple operational needs
 
-**Main Visual:**
-Clean digital storefront with modern UI elements, simple mobile app mockups (Android/iOS), minimalist dashboard with basic charts and navigation.
+**Mapped Visual Themes:**
+- Clean digital storefronts with modern UI elements
+- Simple mobile app mockups (Android/iOS)
+- Minimalist 2-person team visuals (BA + Sr. Engineer)
+- Light, approachable interface designs
+- Bright color accents (teal/green tones)
+- Simple dashboard with basic charts and navigation
+- Fast checkout / booking flow illustrations
 
-**Composition:**
-- Top: clean white space for logo + title
-- Center: floating mobile app mockup with modern UI
-- Bottom: budget tagline + decorative light gradient
-
-**Color Palette:**
-- Background: #FFFFFF / #F6F8F8 light gradient
-- Accent: #006D79 teal
-
-**Mood:** Professional, clean, approachable, startup-friendly, minimal.
-
-**Style Keywords:** `clean UI`, `modern storefront`, `minimalist`, `startup atmosphere`, `light gradient`, `mobile app mockup`, `simple dashboard`
+**Prompt Keywords:** `clean UI`, `modern storefront`, `minimalist`, `startup atmosphere`, `light gradient`, `2-person team`, `mobile app mockup`, `simple dashboard`
 
 ### Growth Package
 
 **Target audience:** Scaling companies needing Finance System, HRIS, CRM, ERP, Inventory, WMS, Logistic, Sales, Production, Asset Management
 
-**Main Visual:**
-Interconnected ERP/CRM/HRIS dashboard mockups, multi-device layouts (desktop + tablet + mobile), data analytics charts and workflow diagrams, integration architecture between systems.
+**Mapped Visual Themes:**
+- Interconnected ERP/CRM/HRIS dashboard mockups
+- Multi-device layouts (desktop + tablet + mobile)
+- 4-person team collaboration visuals (BA + Sr. Engineer + UI/UX + QA)
+- Complex data tables, charts, and workflow diagrams
+- Process flow visualizations (finance, inventory, logistics)
+- Integration architecture between systems
+- Professional corporate gradient backgrounds
 
-**Composition:**
-- Top: dark teal header area for logo + title
-- Center: multi-device display showing interconnected systems
-- Bottom: process flow visualization + budget info
-
-**Color Palette:**
-- Background: #202020 dark / #006D79 teal gradient
-- Accent: #009BAD cyan
-
-**Mood:** Corporate, professional, scalable, data-driven, confident.
-
-**Style Keywords:** `ERP dashboard`, `CRM interface`, `HRIS system`, `multi-device`, `integration architecture`, `data analytics`, `workflow diagram`, `corporate`, `professional`
+**Prompt Keywords:** `ERP dashboard`, `CRM interface`, `HRIS system`, `multi-device`, `integration architecture`, `4-person team`, `data analytics`, `workflow diagram`, `corporate`, `professional`
 
 ### Enterprise Package
 
 **Target audience:** Large enterprise, cross-system integration, high security, AI, Big Data, digital transformation
 
-**Main Visual:**
-High-tech data center corridor with teal neon lighting, holographic AI/Big Data streams, cybersecurity shield overlay with network topology, glowing system architecture diagrams.
+**Mapped Visual Themes:**
+- High-tech data center environments
+- Glowing AI / Big Data stream visualizations
+- Dark cybersecurity shields with network maps
+- Penetration Testing workstation imagery
+- Complex system architecture diagrams
+- Dark mode / cybertech aesthetic
+- Abstract data flow particles and network graphs
+- Holographic UI elements and glowing interfaces
 
-**Composition:**
-- Top: dark space for logo + "ENTERPRISE" title
-- Center-left: holographic UI panels with stats
-- Center-right: 3D system architecture / network map
-- Bottom: abstract data flow particles with budget badge
-
-**Color Palette:**
-- Background: #202020 dark
-- Accent: #006D79 teal, #009BAD cyan glow
-- Text glow: white with teal glow
-
-**Mood:** High-tech, secure, enterprise-grade, scalable, premium, cybertech.
-
-**Style Keywords:** `data center`, `AI streams`, `big data`, `cybersecurity shield`, `penetration testing`, `network map`, `dark cybertech`, `holographic UI`, `system architecture`, `enterprise grade`
+**Prompt Keywords:** `data center`, `AI streams`, `big data`, `cybersecurity shield`, `penetration testing`, `network map`, `dark cybertech`, `holographic UI`, `system architecture`, `enterprise grade`
 
 ---
 

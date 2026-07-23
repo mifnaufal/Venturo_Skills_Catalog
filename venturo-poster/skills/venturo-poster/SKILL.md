@@ -41,22 +41,12 @@ Generate **WhatsApp Business catalog images** for Venturo — an Indonesian soft
 
 Sebelum memulai generation, pastikan:
 
-1. **MCP server `venturo-poster-playwright` sudah terdaftar** di Antigravity config:
-   ```json
-   {
-     "mcpServers": {
-       "venturo-poster-playwright": {
-         "command": "python3",
-         "args": ["<plugin_path>/mcp-playwright/server.py"],
-         "env": {
-           "IMAGE_ROUTER_API_KEY": "sk-xxx..."
-         }
-       }
-     }
-   }
-   ```
-2. **Dependencies sudah terinstall** (`pip install -r <plugin_path>/mcp-playwright/requirements.txt`)
-3. **API key maxrouter.io sudah diisi** di environment variable `IMAGE_ROUTER_API_KEY`
+1. **MCP server sudah terdaftar** — pilih sesuai platform:
+   - **Claude Code**: `.mcp.json` (project scope, sudah include di repo) atau `claude mcp add --scope user venturo-poster -- python3 venturo-poster/mcp-playwright/server.py`
+   - **OpenCode**: `.mcp.json` (project scope, auto-load) atau via `opencode.json`
+   - **Antigravity**: Plugin auto-register via `mcp_config.json` di `~/.gemini/config/plugins/venturo-poster/`
+2. **Dependencies sudah terinstall** (`pip install -r venturo-poster/mcp-playwright/requirements.txt`)
+3. **API key maxrouter.io sudah diisi** di `.env`, environment variable `IMAGE_ROUTER_API_KEY`, atau MCP config
 
 ## Available MCP Tools
 
@@ -80,52 +70,62 @@ Frame questions in **Bahasa Indonesia**. Show you understand their business cont
 
 ### Phase 2: Build Detailed Prompt
 
-Read `templates/packages_context.md` for tier-specific themes and visual mapping.
+Read `templates/packages_context.md` for tier-specific themes and sales copy.
 
-Generate a **detail-rich prompt in English** (Qwen renders text better in English). The prompt MUST follow this structure:
+Generate a **long, detailed prompt** in **Bahasa Indonesia** untuk dikirim ke Qwen-Image-2.0-Pro via maxrouter.io API. The prompt MUST follow this structure and include ALL sections:
 
 ```
-WhatsApp Business catalog image, square 1:1, {tier} package.
+Buat gambar katalog WhatsApp Business untuk paket {TIER}.
+Ukuran: square 1:1 (khusus WhatsApp Business catalog).
 
-TITLE: "{TIER}" — VENTURO Software House Malang
-BUDGET: {budget}
+VENTURO — Software House Malang
+Paket: {tier}
+Budget: {budget}
+Ideal untuk: {target_audience}
+Tim: {team_composition}
 
-MAIN VISUAL:
-{dari templates/packages_context.md — visual theme sesuai tier}
+MASALAH YANG DISELESAIKAN (Masalah Terbesar di Indonesia):
+- (dari templates/packages_context.md — sesuaikan dengan konteks tier)
 
-COMPOSITION:
-- Top area: clean space for "VENTURO" logo + title
-- Center: {main focal element sesuai tier}
-- Bottom: budget info + tagline
+SOLUSI:
+- (dari templates/packages_context.md — sesuaikan dengan konteks tier)
 
-TEXT ON IMAGE (minimal, English):
-- "{TIER}" in bold modern font
-- "VENTURO"
-- "Mulai {budget}"
+HASIL:
+- (dari templates/packages_context.md — sesuaikan dengan konteks tier)
 
-COLOR PALETTE:
-- Background: {dark/light sesuai tier}
-- Accent primary: #006D79 (teal)
-- Accent secondary: #009BAD (cyan)
-- Text: white (on dark) / dark (on light)
+VISUAL THEMES:
+- (dari templates/packages_context.md — pilih yang sesuai tier)
 
-MOOD: {mood sesuai tier}
+STYLE KEYWORDS: (dari templates/packages_context.md)
 
-STYLE KEYWORDS: {dari templates/packages_context.md}
+BRAND & DESAIN:
+- Warna Primer: #006D79 (teal)
+- Warna Sekunder: #009BAD
+- Dark: #202020
+- Light BG: #F6F8F8
+- Heading: #292929
+- Body Text: #4B5563
+- Background: #FFFFFF
 
-DO NOT include: people faces, long paragraphs, busy backgrounds, cartoonish elements.
+DESIGN RULES:
+- WhatsApp Business catalog image, square 1:1
+- Clean, professional, modern, minimal
+- Bahasa Indonesia
+- Gunakan style "Default Venturo" yang profesional dan korporat.
+- Logo Venturo diambil dari referensi yang diupload, silakan AI menempatkan posisinya secara natural agar terlihat elegan dan menyatu dengan desain.
+- (include user preferences dari interview)
 ```
 
 **Wajib incorporate hasil interview user:**
-- If user specified color preferences → tambahkan ke color palette
-- If user wanted specific layout/placement → tambahkan ke composition
-- If user has custom text/stats → tambahkan ke TEXT ON IMAGE
+- If user specified color preferences → tambahkan ke design rules
+- If user wanted specific layout/placement → tambahkan ke visual themes
+- If user has custom text/stats → sisipkan di konten
 
 ### Phase 3: Preview Spec (NO GENERATION)
 
-Tampilkan **final prompt** yang akan dikirim (English, visual-focused), plus reference images:
+Tampilkan **full prompt** yang akan dikirim ke API, plus reference images:
 
-1. **Final prompt** (tampilkan LENGKAP, jangan dipotong)
+1. **Full prompt** (tampilkan LENGKAP, jangan dipotong — pastikan ada "square 1:1" di dalamnya)
 2. The Venturo logo (`assets/image_1c155d.png`) — dikirim sebagai reference image ke API, AI composites naturally
 3. **Ask for approval:** "Apakah spec ini sesuai? Saya akan generate via maxrouter.io Chat Completions API dengan model Qwen-Image-2.0-Pro dan referensi logo Venturo. Lanjut?"
 
@@ -152,7 +152,7 @@ Jika gagal:
 - "IMAGE_ROUTER_API_KEY not set" → "API key belum diatur. Set environment variable IMAGE_ROUTER_API_KEY."
 - Error API lain → tampilkan detail error dari respons
 
-> **CRITICAL:** Kirim prompt final (English, visual-focused) via `generate_catalog()`. Jangan dipotong/diringkas. Pastikan semua elemen (Main Visual, Composition, Text, Color, Mood, preferensi user) masuk semua.
+> **CRITICAL:** Kirim prompt LENGKAP (dalam Bahasa Indonesia, format detail dengan Masalah/Solusi/Hasil) via `generate_catalog()`. Jangan dipotong/diringkas. Pastikan semua section (Masalah, Solusi, Hasil, Visual Themes, Brand & Desain, Design Rules) + preferensi user masuk semua. WAJIB sertakan "square 1:1" di prompt.
 
 ### Phase 6: Delivery
 
@@ -172,20 +172,35 @@ Jika gagal:
 - **Do NOT generate or composite the logo separately.** The Venturo logo is sent as a reference image to the API and AI composites it naturally into the design.
 - **Do NOT use Pillow or other local rendering.** The Qwen-Image model handles ALL visual generation.
 - **Always** include the Venturo logo reference in the prompt instructions.
-- **Gunakan English untuk prompt** (Qwen render teks lebih baik dalam English), tapi konten katalog tetap Bahasa Indonesia.
-- **Prompt harus visual-focused, bukan business copy.** Fokus pada deskripsi visual, komposisi, warna, dan mood. Jangan menyertakan blok teks panjang (Masalah/Solusi/Hasil) — itu bukan untuk image prompt. Incorporate preferensi user ke bagian composition/color/mood.
+- **Gunakan Bahasa Indonesia untuk prompt** (Qwen-Image-2.0-Pro handle Bahasa Indonesia dengan baik).
+- **Prompt harus detail dengan Masalah/Solusi/Hasil** — ini memberikan konteks bisnis yang kuat untuk menghasilkan gambar yang relevan. Jangan dipotong.
+- **WAJIB sertakan "square 1:1"** atau "ukuran 1:1" di setiap prompt karena ini khusus WhatsApp Business catalog.
 - **Jika MCP tool gagal**, tampilkan error detailnya ke user dan tawarkan untuk coba lagi.
 
 ## MCP Server Configuration
 
-Tambahkan MCP server ini ke Antigravity config (`~/.gemini/config/antigravity.json` atau sesuai setup):
+Project ini support 3 platform. Pilih sesuai kebutuhan:
 
+### Claude Code
+`.mcp.json` di project root sudah include — auto-load saat startup.
+Atau register global:
+```bash
+claude mcp add --scope user venturo-poster -- python3 venturo-poster/mcp-playwright/server.py
+```
+
+### OpenCode
+`.mcp.json` di project root — OpenCode auto-load pas startup.
+Atau via `opencode.json`:
+
+### Antigravity (agy)
+Plugin auto-register lewat installer (`./install.sh`).
+Atau manual di `~/.gemini/config/mcp_config.json`:
 ```json
 {
   "mcpServers": {
-    "venturo-poster-playwright": {
+    "venturo-poster": {
       "command": "python3",
-      "args": ["<absolute_path>/mcp-playwright/server.py"],
+      "args": ["<absolute_path>/venturo-poster/mcp-playwright/server.py"],
       "env": {
         "IMAGE_ROUTER_API_KEY": "<your_api_key>"
       }
@@ -194,7 +209,7 @@ Tambahkan MCP server ini ke Antigravity config (`~/.gemini/config/antigravity.js
 }
 ```
 
-Ganti `<absolute_path>` dengan path lengkap ke `venturo-poster/mcp-playwright/server.py`.
+Ganti `<absolute_path>` dengan path lengkap ke project.
 Ganti `<your_api_key>` dengan maxrouter.io API key.
 
 ## File Reference

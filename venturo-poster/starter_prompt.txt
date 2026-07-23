@@ -1,0 +1,47 @@
+Buat gambar katalog WhatsApp Business untuk paket Starter.
+Ukuran: square 1:1 (khusus WhatsApp Business catalog).
+
+VENTURO — Software House Malang
+Paket: Starter
+Budget: Rp20 Juta – Rp80 Juta
+Ideal untuk: UMKM, startup, website & mobile app sederhana
+Tim: 1 Business Analyst, 1 Senior Software Engineer
+
+MASALAH YANG DISELESAIKAN (Masalah Terbesar di Indonesia):
+- Perusahaan membutuhkan website atau aplikasi yang benar-benar sesuai dengan proses bisnisnya.
+- Sudah menggunakan aplikasi berlangganan, namun fitur yang tersedia belum mampu memenuhi kebutuhan operasional.
+- Proses bisnis harus menyesuaikan aplikasi, bukan aplikasi yang mengikuti kebutuhan perusahaan.
+
+SOLUSI:
+- Pengembangan Website dan Mobile Application (Android & iOS) yang dirancang khusus sesuai kebutuhan perusahaan.
+- Analisis kebutuhan bisnis untuk memastikan setiap fitur mendukung proses operasional.
+- Desain UI/UX modern, responsif, dan mudah digunakan.
+
+HASIL:
+- Website atau aplikasi yang dirancang sesuai kebutuhan dan proses bisnis perusahaan.
+- Meningkatkan efisiensi operasional melalui digitalisasi dan otomatisasi proses kerja.
+- Sistem yang fleksibel dan mudah dikembangkan seiring pertumbuhan bisnis.
+
+VISUAL THEMES:
+- Clean digital storefronts with modern UI elements
+- Simple mobile app mockups (Android/iOS)
+- Minimalist 2-person team visuals (BA + Sr. Engineer)
+- Light, approachable interface designs
+
+STYLE KEYWORDS: clean UI, modern storefront, minimalist, startup atmosphere, light gradient, mobile app mockup, simple dashboard
+
+BRAND & DESAIN:
+- Warna Primer: #006D79 (teal)
+- Warna Sekunder: #009BAD
+- Dark: #202020
+- Light BG: #F6F8F8
+- Heading: #292929
+- Body Text: #4B5563
+- Background: #FFFFFF
+
+DESIGN RULES:
+- WhatsApp Business catalog image, square 1:1
+- Clean, professional, modern, minimal
+- Bahasa Indonesia
+- Gunakan style "Default Venturo" yang profesional dan korporat.
+- Logo Venturo diambil dari referensi yang diupload, silakan AI menempatkan posisinya secara natural agar terlihat elegan dan menyatu dengan desain.

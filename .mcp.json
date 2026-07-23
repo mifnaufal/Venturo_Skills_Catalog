@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "venturo-poster": {
+      "command": "python3",
+      "args": ["venturo-poster/mcp-playwright/server.py"],
+      "env": {
+        "IMAGE_ROUTER_API_KEY": ""
+      }
+    }
+  }
+}

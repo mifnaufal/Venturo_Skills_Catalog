@@ -1,26 +1,81 @@
-# Venturo WhatsApp Business Catalog — Antigravity Plugin
+# Venturo Skills Catalog
 
-Generate **WhatsApp Business catalog images** for Venturo's software development packages using **Qwen-Image-2.0-Pro** (via ImageRouter API). Logo Venturo dikirim sebagai reference image, AI composite otomatis.
+Generate **WhatsApp Business catalog images** for Venturo's software development packages using **Qwen-Image-2.0-Pro** (via maxrouter.io API). Logo Venturo dikirim sebagai reference image, AI composite otomatis.
 
-**Engine:** Qwen-Image-2.0-Pro — `$0.075/gambar` — imagerouter.io
+**Engine:** Qwen-Image-2.0-Pro — `$0.075/gambar` — maxrouter.io
 
 ## Prerequisites
 
 - Python 3.8+
-- ImageRouter API key: daftar di https://imagerouter.io/api-keys
+- Dependencies: `pip install -r venturo-poster/mcp-playwright/requirements.txt`
+- API Key: daftar di https://maxrouter.io
 
-## Install
+## Project Structure
 
-```bash
-git clone <repo-url>
-cd Venturo_Skills_Catalog
-pip install -r venturo-poster/mcp-playwright/requirements.txt
-./install.sh
+```
+Venturo_Skills_Catalog/
+├── AGENTS.md                          # OpenCode project rules
+├── CLAUDE.md                          # Claude Code instructions
+├── .mcp.json                          # MCP config (Claude Code + OpenCode)
+├── opencode.json                      # OpenCode project config
+├── .env / .env.example                # API key config
+├── .claude/skills/venturo-poster/     # Skill discovery (Claude Code + OpenCode)
+├── install.sh / install.ps1           # Installers
+└── venturo-poster/
+    ├── plugin.json                    # Antigravity plugin manifest
+    ├── skills/venturo-poster/SKILL.md # Canonical skill definition
+    ├── assets/image_1c155d.png        # Venturo logo (reference untuk AI)
+    ├── mcp-playwright/
+    │   ├── server.py                  # MCP server (API-based)
+    │   └── requirements.txt           # Python dependencies
+    ├── templates/packages_context.md  # Service tier reference
+    └── output/                        # Generated images
 ```
 
-**Windows (PowerShell):**
-```powershell
-.\install.ps1
+## Setup per Platform
+
+### Claude Code
+
+```bash
+# Install dependencies
+pip install -r venturo-poster/mcp-playwright/requirements.txt
+
+# Set API key
+export IMAGE_ROUTER_API_KEY="sk-xxx..."
+
+# Start Claude Code (auto-reads .mcp.json + .claude/skills/)
+claude
+```
+
+Atau register global:
+```bash
+claude mcp add --scope user venturo-poster -- python3 venturo-poster/mcp-playwright/server.py
+```
+
+### OpenCode
+
+```bash
+# Install dependencies
+pip install -r venturo-poster/mcp-playwright/requirements.txt
+
+# Set API key
+export IMAGE_ROUTER_API_KEY="sk-xxx..."
+
+# Start OpenCode (auto-reads .mcp.json + AGENTS.md)
+opencode
+```
+
+### Antigravity (agy)
+
+```bash
+# Quick install
+pip install -r venturo-poster/mcp-playwright/requirements.txt
+./install.sh          # Linux/macOS
+.\install.ps1         # Windows
+
+# Set API key di .env atau mcp_config.json
+# Lalu:
+agy
 ```
 
 ## Setup API Key
@@ -28,53 +83,31 @@ pip install -r venturo-poster/mcp-playwright/requirements.txt
 Pilih salah satu:
 
 ### Opsi 1 — `.env` file (recommended)
-
 ```bash
 cp .env.example .env
-# lalu edit .env, isi API key:
-#   IMAGE_ROUTER_API_KEY=ir_xxx...
+# lalu edit .env, isi API key
 ```
 
-File `.env` auto-detect — server.py membaca otomatis. Aman di `.gitignore`.
-
 ### Opsi 2 — Environment variable
-
 ```bash
-export IMAGE_ROUTER_API_KEY="ir_xxx..."
-agy
+export IMAGE_ROUTER_API_KEY="sk-xxx..."
 ```
 
 ### Opsi 3 — MCP config
+Isi `IMAGE_ROUTER_API_KEY` di `env` field `.mcp.json` atau `mcp_config.json`.
 
-Di `~/.gemini/config/antigravity.json` atau `mcp_config.json`:
+## Cara Pakai
 
-```json
-{
-  "mcpServers": {
-    "venturo-poster-playwright": {
-      "command": "python3",
-      "args": ["<path>/venturo-poster/mcp-playwright/server.py"],
-      "env": {
-        "IMAGE_ROUTER_API_KEY": "ir_xxx..."
-      }
-    }
-  }
-}
-```
-
-## Cara Pakai via Antigravity CLI
-
-```bash
-agy
-# lalu ketik: /venturo-poster
-# atau:      buat katalog WhatsApp buat Venturo
-```
+Di agent prompt, bilang aja:
+- "buat katalog WhatsApp Venturo"
+- "catalog wa paket growth"
+- "poster venturo buat client"
 
 AI agent akan:
 1. Wawancara user (tier, preferensi desain, konten custom)
 2. Bangun prompt detail untuk Qwen-Image
 3. Tampilkan preview spec untuk approval
-4. Generate via ImageRouter API (Qwen-Image-2.0-Pro) — < 10 detik
+4. Generate via maxrouter.io API — < 10 detik
 5. Kirim hasil ke user
 
 ## Package Tiers
@@ -84,28 +117,6 @@ AI agent akan:
 | **Starter** | Rp20 Juta – Rp80 Juta | UMKM, startup |
 | **Growth** | Rp80 Juta – Rp250 Juta | Finance, HRIS, CRM, ERP |
 | **Enterprise** | Mulai Rp250 Juta | AI, Big Data, cybersecurity |
-
-## Project Structure
-
-```
-venturo-poster/
-├── plugin.json                       # Plugin manifest
-├── skills/venturo-poster/SKILL.md    # AI agent skill definition
-├── assets/image_1c155d.png           # Venturo logo (reference untuk AI)
-├── mcp-playwright/
-│   ├── server.py                     # ImageRouter MCP server (API-based)
-│   └── requirements.txt              # Python dependencies
-├── templates/packages_context.md     # Service tier reference
-├── output/                           # Generated images
-├── install.sh                        # Linux/macOS installer
-├── install.ps1                       # Windows PowerShell installer
-└── README.md
-```
-
-Root files:
-- `.env.example` — Template API key config
-- `.env` — API key (gitignored, tidak ke-commit)
-- `.gitignore` — Ignores venv, __pycache__, .env, output/
 
 ## License
 
