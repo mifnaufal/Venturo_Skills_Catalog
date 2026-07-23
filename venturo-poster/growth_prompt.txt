@@ -1,0 +1,70 @@
+Buat gambar katalog WhatsApp Business untuk paket GROWTH.
+FORMAT: SQUARE 1:1 (persegi sempurna 1024x1024 pixel). BUKAN BANNER LANDSCAPE.
+
+KOMPOSISI — WAJIB SQUARE PERSEGI:
+- Desain layout persegi. Header di atas = branding + judul paket. Body di bawah = konten.
+- Layout 2 kolom di body: kiri = visual mockup multi-device, kanan = teks fitur.
+- Header bar: Nama paket besar, logo Venturo di kiri atas.
+- SEMUA elemen muat dalam frame PERSEGI. Jangan buat layout horizontal/banner.
+
+VENTURO — Software House Malang
+PAKET: GROWTH
+BUDGET: Rp80 Juta – Rp250 Juta
+IDEAL UNTUK: Finance System, HRIS, CRM, ERP, Inventory, Procurement, WMS, Logistic, Sales Management, Production Management, Asset Management
+TIM DEDICATED: 1 Business Analyst + 1 Senior Software Engineer + 1 UI/UX Designer + 1 QA Engineer
+TIMELINE: 1–4.5 Bulan (Requirement 2 minggu–1 bulan, Development 1–2 bulan, Testing & Go-Live 2 minggu–1 bulan)
+
+MASALAH YANG DISELESAIKAN:
+- Aplikasi yang ada tidak scalable mengikuti pertumbuhan bisnis.
+- Fitur standar belum memenuhi kebutuhan operasional spesifik perusahaan.
+- Sistem tidak terintegrasi antar departemen.
+- UI/UX yang ketinggalan zaman sehingga mengurangi produktivitas.
+
+SOLUSI:
+- Aplikasi custom yang dirancang khusus sesuai proses bisnis.
+- Multi-module: Finance, HRIS, CRM, ERP, Inventory, WMS, Logistic, dll.
+- Integrasi antar sistem (ERP, CRM, Payment Gateway, WhatsApp API).
+- Dashboard monitoring dan reporting yang powerful.
+- Desain UI/UX modern, responsif di semua perangkat.
+
+HASIL:
+- Sistem operasional terintegrasi dari hulu ke hilir.
+- Efisiensi operasional meningkat drastis.
+- Keputusan bisnis berbasis data real-time.
+- Scalable untuk pertumbuhan 1-5 tahun ke depan.
+
+TEXT YANG HARUS TERCETAK DI GAMBAR:
+- Judul besar: PAKET GROWTH
+- Subjudul: Ideal untuk Company Scaling
+- Box berwarna teal: Rp80 Juta – Rp250 Juta
+- List fitur: Finance, HRIS, CRM, ERP, Inventory, WMS
+- Tim: 1 BA + 1 Sr. Eng + 1 UI/UX + 1 QA
+- Timeline: 1–4.5 Bulan
+- Footer: VENTURO — Software House Malang
+
+VISUAL — GROWTH TIER:
+- Dashboard ERP/CRM/HRIS yang interconnected dan data-rich
+- Multi-device mockup (desktop monitor + tablet + smartphone)
+- 4-person team collaboration (BA + Engineer + UI/UX + QA)
+- Data analytics charts dan workflow diagrams
+- Integration architecture visualization
+- Professional corporate gradient dengan aksen teal
+
+STYLE KEYWORDS: ERP dashboard, CRM interface, HRIS system, multi-device, integration architecture, 4-person team, data analytics, workflow diagram, corporate, professional, interconnected
+
+BRAND & DESAIN:
+- Warna Primer: #006D79 (teal gelap) — dominan
+- Warna Sekunder: #009BAD (teal terang) — aksen
+- Background: #FFFFFF dengan gradasi ke corporate gradient
+- Heading: #292929, Body Text: #4B5563
+
+DESIGN RULES (WAJIB DIPATUHI):
+1. FORMAT SQUARE 1:1 — PERSEGI SEMPURNA. BUKAN LANDSCAPE. BUKAN BANNER.
+2. WhatsApp Business catalog — clean, professional, modern, corporate.
+3. Bahasa Indonesia untuk semua teks.
+4. Style "Default Venturo" — teal + corporate gradient. Professional tapi approachable.
+5. Logo Venturo dari referensi, letakkan di kiri atas.
+6. Hierarki visual: judul paket > harga > modul-fitur > team > footer.
+7. Whitespace cukup — tapi boleh sedikit lebih dense karena informasi lebih banyak.
+8. Dashboard mockup terlihat data-rich tapi tetap readable.
+9. Multi-device layout harus terlihat coordinated (desktop, tablet, phone dalam satu komposisi).

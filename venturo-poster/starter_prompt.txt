@@ -1,47 +1,83 @@
-Buat gambar katalog WhatsApp Business untuk paket Starter.
-Ukuran: square 1:1 (khusus WhatsApp Business catalog).
+Buat gambar katalog WhatsApp Business untuk paket STARTER.
+FORMAT WAJIB: CARD PERSEGI 1:1 seperti kartu profil Instagram. Bukan banner. Bukan wide.
+
+BRIEF DESAIN:
+- Desain vertikal (portrait-ish) berbentuk kotak persegi 1:1.
+- Layout: header card di atas dengan logo Venturo, tengah = teks info paket, bawah = visual mockup phone + checklist fitur.
+- Background: putih (#FFFFFF) dengan gradien halus ke teal muda (#F6F8F8) di bagian bawah.
+- Frame visual: buatkan seolah-olah ini adalah "card" atau "profil page" WhatsApp Business catalog.
+- Teks harus terorganisir seperti list/item dengan ikon sederhana.
 
 VENTURO — Software House Malang
-Paket: Starter
-Budget: Rp20 Juta – Rp80 Juta
-Ideal untuk: UMKM, startup, website & mobile app sederhana
-Tim: 1 Business Analyst, 1 Senior Software Engineer
+PAKET: STARTER
+BUDGET: Rp20 Juta – Rp80 Juta
+IDEAL UNTUK: UMKM, Usaha Mikro, Startup — butuh website, mobile app, sistem operasional sederhana
+TIM: 1 Business Analyst + 1 Senior Software Engineer
+TIMELINE: 1–4 Minggu
 
-MASALAH YANG DISELESAIKAN (Masalah Terbesar di Indonesia):
-- Perusahaan membutuhkan website atau aplikasi yang benar-benar sesuai dengan proses bisnisnya.
-- Sudah menggunakan aplikasi berlangganan, namun fitur yang tersedia belum mampu memenuhi kebutuhan operasional.
-- Proses bisnis harus menyesuaikan aplikasi, bukan aplikasi yang mengikuti kebutuhan perusahaan.
+KOMPOSISI PERSEGI 1:1 (HARUS SQUARE, BUKAN LANDSCAPE):
+- Buat layout portrait/vertical di dalam kotak. Headline di bagian atas tengah.
+- Di bawah headline: box teal dengan harga "Rp20 Juta – Rp80 Juta"
+- Di bawah harga: subjudul "Ideal untuk UMKM & Startup"
+- Di bawahnya: 4-5 baris checklist dengan icon checkmark (✓) — fitur utama
+- Di bawah checklist: visual mockup smartphone yang menampilkan dashboard/app
+- Di pojok kiri atas: Logo Venturo (akan di-reference dari gambar yang diupload)
+- Di bagian paling bawah: "TIM: 1 BA + 1 Sr. Engineer | 1–4 Minggu" dan "VENTURO — Software House Malang"
+
+Semua elemen harus tersebar vertikal di dalam frame persegi 1:1. Bukan horizontal. Bukan banner lebar.
+
+MASALAH YANG DISELESAIKAN:
+- Aplikasi belum sesuai kebutuhan bisnis
+- Proses bisnis menyesuaikan aplikasi, bukan sebaliknya
+- Tidak bisa kustomisasi
+- UI/UX kurang user-friendly
 
 SOLUSI:
-- Pengembangan Website dan Mobile Application (Android & iOS) yang dirancang khusus sesuai kebutuhan perusahaan.
-- Analisis kebutuhan bisnis untuk memastikan setiap fitur mendukung proses operasional.
-- Desain UI/UX modern, responsif, dan mudah digunakan.
+- Website & Mobile App custom
+- Analisis kebutuhan bisnis
+- Desain UI/UX modern & responsif
+- Fitur fleksibel dan scalable
+- Integrasi dengan sistem existing
 
 HASIL:
-- Website atau aplikasi yang dirancang sesuai kebutuhan dan proses bisnis perusahaan.
-- Meningkatkan efisiensi operasional melalui digitalisasi dan otomatisasi proses kerja.
-- Sistem yang fleksibel dan mudah dikembangkan seiring pertumbuhan bisnis.
+- Aplikasi sesuai kebutuhan bisnis
+- Efisiensi operasional meningkat
+- UI/UX modern dan intuitif
+- Dashboard monitoring & reporting
 
-VISUAL THEMES:
-- Clean digital storefronts with modern UI elements
-- Simple mobile app mockups (Android/iOS)
-- Minimalist 2-person team visuals (BA + Sr. Engineer)
-- Light, approachable interface designs
+TEXT YANG HARUS ADA DI GAMBAR (huruf besar jelas):
+- (atas tengah) PAKET STARTER
+- (box teal) Rp20 Juta – Rp80 Juta
+- (subjudul) Ideal untuk UMKM & Startup
+- (checklist)
+  ✓ Website & Mobile App Custom
+  ✓ UI/UX Modern & Responsif
+  ✓ Sistem Scalable & Fleksibel
+  ✓ Efisiensi Operasional Naik
+  ✓ Dashboard Monitoring
+- (footer kiri atas) Logo Venturo
+- (bawah) VENTURO — Software House Malang
 
-STYLE KEYWORDS: clean UI, modern storefront, minimalist, startup atmosphere, light gradient, mobile app mockup, simple dashboard
+VISUAL:
+- Smartphone mockup modern menampilkan dashboard app dengan chart dan graph
+- Icon sederhana untuk setiap fitur (checkmark hijau/teal)
+- Light gradient dari putih ke teal muda
+- 2 orang ilustrasi flat-style developer yang sedang collaborate (opsional, di sudut kanan bawah)
 
-BRAND & DESAIN:
-- Warna Primer: #006D79 (teal)
-- Warna Sekunder: #009BAD
-- Dark: #202020
-- Light BG: #F6F8F8
-- Heading: #292929
-- Body Text: #4B5563
-- Background: #FFFFFF
+STYLE: clean UI, minimalist, startup vibe, professional, modern, flat design
 
-DESIGN RULES:
-- WhatsApp Business catalog image, square 1:1
-- Clean, professional, modern, minimal
-- Bahasa Indonesia
-- Gunakan style "Default Venturo" yang profesional dan korporat.
-- Logo Venturo diambil dari referensi yang diupload, silakan AI menempatkan posisinya secara natural agar terlihat elegan dan menyatu dengan desain.
+BRAND COLORS:
+- Teal #006D79 (utama), Teal Light #009BAD (sekunder)
+- Background #FFFFFF, Light BG #F6F8F8
+- Heading #292929, Body #4B5563
+- Font: Bold condensed sans-serif untuk heading
+
+DESIGN RULES (WAJIB):
+1. SQUARE 1:1 — CARD PORTRAIT. BUKAN BANNER LANDSCAPE. BUKAN HORIZONTAL.
+2. Layout vertikal seperti profil page / card.
+3. Bahasa Indonesia untuk semua teks.
+4. Logo Venturo dari referensi gambar yang diupload, taruh di pojok kiri atas.
+5. Whitespace cukup, design breathable.
+6. Hierarki: judul paket > harga teal box > subjudul > checklist fitur > visual phone > footer.
+7. Teks harus jelas terbaca dan tidak terlalu rapat.
+8. Mockup smartphone terlihat clean dan modern.

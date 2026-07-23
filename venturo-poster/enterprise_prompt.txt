@@ -1,0 +1,74 @@
+Buat gambar katalog WhatsApp Business untuk paket ENTERPRISE.
+FORMAT: SQUARE 1:1 (persegi sempurna 1024x1024 pixel). BUKAN BANNER LANDSCAPE.
+
+KOMPOSISI — WAJIB SQUARE PERSEGI:
+- Desain layout persegi. Header di atas = branding + judul paket. Body di bawah = konten.
+- Layout 2 kolom di body: kiri = visual high-tech, kanan = teks fitur.
+- Header bar: Nama paket besar, logo Venturo di kiri atas.
+- SEMUA elemen muat dalam frame PERSEGI. Jangan buat layout horizontal/banner.
+
+VENTURO — Software House Malang
+PAKET: ENTERPRISE
+BUDGET: Mulai dari Rp250 Juta
+IDEAL UNTUK: Perusahaan menengah hingga enterprise — AI, Big Data, cybersecurity, integrasi lintas sistem, transformasi digital menyeluruh
+TIM DEDICATED: 1 BA + 1 Sr. Software Engineer + 1 Intermediate Engineer + 1 UI/UX + 1 QA + 1 Penetration Tester (6 orang)
+TIMELINE: 2–8 Bulan (Requirement 1–2 bulan, Development 2–4 bulan, Testing & Go-Live 2 bulan)
+
+MASALAH YANG DISELESAIKAN:
+- Sistem enterprise yang terfragmentasi dan tidak terintegrasi.
+- Keamanan data yang rentan dan belum memiliki penetration testing rutin.
+- Tidak ada kemampuan AI/Big Data untuk decision making.
+- Transformasi digital terhambat oleh legacy system.
+
+SOLUSI:
+- Sistem enterprise-grade dengan arsitektur microservices/megaservices.
+- Integrasi lintas sistem dan legacy modernization.
+- AI & Big Data implementation untuk predictive analytics.
+- Cybersecurity comprehensive dengan penetration testing berkala.
+- Digital transformation roadmap yang terstruktur.
+
+HASIL:
+- Enterprise system yang terintegrasi dan scalable.
+- Cybersecurity maturity level tinggi.
+- Data-driven decision making dengan AI capabilities.
+- Future-proof infrastructure untuk 5-10 tahun ke depan.
+
+TEXT YANG HARUS TERCETAK DI GAMBAR:
+- Judul besar: PAKET ENTERPRISE
+- Subjudul: Untuk Enterprise Grade Solutions
+- Box berwarna teal: Mulai Rp250 Juta
+- List fitur: AI & Big Data, Cybersecurity, Cross-System Integration, Digital Transformation
+- Tim: 6 orang (BA + Sr.Eng + Mid.Eng + UI/UX + QA + PenTest)
+- Timeline: 2–8 Bulan
+- Footer: VENTURO — Software House Malang
+
+VISUAL — ENTERPRISE TIER:
+- High-tech data center environment dengan server racks
+- Glowing AI / Big Data stream visualizations
+- Cybersecurity shield dengan network protection overlay
+- Penetration testing workstation imagery
+- Dark mode / cyber tech aesthetic dengan neon teal accents
+- System architecture diagram complexity tinggi
+- Abstract data flow particles dan network graphs
+- Holographic UI elements dan glowing interface
+
+STYLE KEYWORDS: data center, AI streams, big data, cybersecurity shield, penetration testing, network map, dark cybertech, holographic UI, system architecture, enterprise grade, high-tech, neon accents
+
+BRAND & DESAIN:
+- Warna Primer: #006D79 (teal gelap) — neon accent dalam dark theme
+- Warna Sekunder: #009BAD (teal terang) — glowing effect
+- Background: Dark mode (#202020) dengan teal glow accents
+- Heading: #292929 atau putih terang untuk dark bg
+- Body Text: #4B5563 atau abu terang untuk dark bg
+- Aksen neon teal pada elements penting
+
+DESIGN RULES (WAJIB DIPATUHI):
+1. FORMAT SQUARE 1:1 — PERSEGI SEMPURNA. BUKAN LANDSCAPE. BUKAN BANNER.
+2. WhatsApp Business catalog — clean, professional, high-tech, enterprise.
+3. Bahasa Indonesia untuk semua teks.
+4. Style "Dark Venturo" — dark mode dengan neon teal accents. Cyber-tech aesthetic.
+5. Logo Venturo dari referensi, letakkan di kiri atas (putih/light variant agar kontras).
+6. Hierarki visual: judul paket > harga > fitur enterprise > team > footer.
+7. Whitespace tetap penting meski dark mode — biarkan elemen "glow".
+8. Visual harus terasa HIGH-TECH dan ENTERPRISE GRADE — bukan startup casual.
+9. Cybersecurity dan AI elements harus terlihat prominent (shield, data streams, neural network vibes).

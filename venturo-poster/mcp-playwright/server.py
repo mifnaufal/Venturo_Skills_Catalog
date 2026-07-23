@@ -9,7 +9,7 @@ import sys
 import time
 from pathlib import Path
 
-from PIL import Image
+from PIL import Image, ImageFilter
 
 import requests
 from mcp.server.fastmcp import FastMCP
@@ -140,22 +140,34 @@ async def generate_catalog(
         except Exception as exc:
             return f"Error downloading image from {image_url}: {exc}"
 
-    img = Image.open(io.BytesIO(img_bytes))
+    img = Image.open(io.BytesIO(img_bytes)).convert("RGBA")
 
-    # Force resize to square 1:1 for WhatsApp Business catalog
+    TARGET = 1024
+
+    # Smart post-processing: force square 1:1 output
     w, h = img.size
     if w != h:
-        # Crop to square from center
-        size = min(w, h)
-        left = (w - size) // 2
-        top = (h - size) // 2
-        right = left + size
-        bottom = top + size
-        img = img.crop((left, top, right, bottom))
-        logger.info("Image cropped %dx%d → %dx%d (1:1 square)", w, h, size, size)
+        if w > h:
+            # Landscape → pad top & bottom with blurred version of original
+            # Scale down original to TARGET x TARGET, blur heavily for background
+            small = img.resize((TARGET, TARGET), Image.LANCZOS)
+            bg = small.filter(ImageFilter.GaussianBlur(radius=40))
+            # Overlay original image centered
+            bg.paste(img, ((TARGET - h) // 2, 0), img)
+            img = bg
+            logger.info("Landscape %dx%d → padded+blurred to %dx%d square", w, h, TARGET, TARGET)
+        else:
+            # Portrait → pad left & right with blurred version
+            small = img.resize((TARGET, TARGET), Image.LANCZOS)
+            bg = small.filter(ImageFilter.GaussianBlur(radius=40))
+            bg.paste(img, (0, (TARGET - w) // 2), img)
+            img = bg
+            logger.info("Portrait %dx%d → padded+blurred to %dx%d square", w, h, TARGET, TARGET)
+    else:
+        img = img.resize((TARGET, TARGET), Image.LANCZOS)
+        logger.info("Already square, resized to %dx%d", TARGET, TARGET)
 
-    img = img.resize((1024, 1024), Image.LANCZOS)
-    logger.info("Image resized to 1024x1024 (1:1 square)")
+    logger.info("Final output: 1024x1024 (1:1 square)")
 
     timestamp = time.strftime("%Y%m%d-%H%M%S")
     filename = f"venturo-{tier}-{timestamp}.png"
