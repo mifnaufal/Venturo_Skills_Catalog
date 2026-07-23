@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
 
 import base64
+import io
 import logging
 import os
 import re
 import sys
 import time
 from pathlib import Path
+
+from PIL import Image
 
 import requests
 from mcp.server.fastmcp import FastMCP
@@ -137,10 +140,27 @@ async def generate_catalog(
         except Exception as exc:
             return f"Error downloading image from {image_url}: {exc}"
 
+    img = Image.open(io.BytesIO(img_bytes))
+
+    # Force resize to square 1:1 for WhatsApp Business catalog
+    w, h = img.size
+    if w != h:
+        # Crop to square from center
+        size = min(w, h)
+        left = (w - size) // 2
+        top = (h - size) // 2
+        right = left + size
+        bottom = top + size
+        img = img.crop((left, top, right, bottom))
+        logger.info("Image cropped %dx%d → %dx%d (1:1 square)", w, h, size, size)
+
+    img = img.resize((1024, 1024), Image.LANCZOS)
+    logger.info("Image resized to 1024x1024 (1:1 square)")
+
     timestamp = time.strftime("%Y%m%d-%H%M%S")
     filename = f"venturo-{tier}-{timestamp}.png"
     output_path = OUTPUT_DIR / filename
-    output_path.write_bytes(img_bytes)
+    img.save(output_path, "PNG")
     logger.info("Image saved to %s", output_path)
     return f"Catalog image generated: {output_path}"
 
