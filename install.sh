@@ -65,13 +65,13 @@ echo -e "${GREEN}  • $PLUGIN_DIR_CLI${NC}"
 # 5. Create Python virtual environment
 echo ""
 echo "  Creating Python virtual environment..."
-python3 -m venv "$VENV_DIR"
+python3 -m venv "$VENV_DIR" >/dev/null 2>&1
 echo -e "${GREEN}✔ Virtual environment created at $VENV_DIR${NC}"
 
 # 6. Install MCP + Playwright dependencies
 echo ""
 echo "  Installing Python dependencies..."
-"$VENV_PIP" install -r "$PLUGIN_DIR/mcp-playwright/requirements.txt"
+"$VENV_PIP" install -r "$PLUGIN_DIR/mcp-playwright/requirements.txt" >/dev/null 2>&1
 echo -e "${GREEN}✔ Python dependencies installed${NC}"
 
 # 7. Install Chromium
@@ -80,7 +80,7 @@ echo "  Installing Chromium browser..."
 if "$VENV_PYTHON" -c "from playwright.sync_api import sync_playwright; print('OK')" 2>/dev/null; then
     echo -e "${GREEN}✔ Playwright ready${NC}"
 else
-    "$VENV_PYTHON" -m playwright install chromium
+    "$VENV_PYTHON" -m playwright install chromium >/dev/null 2>&1
     echo -e "${GREEN}✔ Chromium installed${NC}"
 fi
 

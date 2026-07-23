@@ -90,56 +90,52 @@ Frame questions in **Bahasa Indonesia**. Show you understand their business cont
 
 ### Phase 2: Build Detailed Prompt
 
-Read `templates/packages_context.md` for tier-specific themes and sales copy.
+Read `templates/packages_context.md` for tier-specific themes and visual mapping.
 
-Generate a **long, detailed Dreamina prompt** in Bahasa Indonesia. The prompt MUST follow this structure and include ALL sections:
+Generate a **concise, visual-focused Dreamina prompt** in English (Dreamina renders English better for text). The prompt MUST follow this structure:
 
 ```
-Buat gambar katalog WhatsApp Business untuk paket {TIER}.
+WhatsApp Business catalog image, square 1:1, {tier} package.
 
-VENTURO — Software House Malang
-Paket: {tier}
-Budget: {budget}
-Ideal untuk: {target_audience}
-Tim: {team_composition}
+TITLE: "{TIER}" — VENTURO Software House Malang
+BUDGET: {budget}
 
-MASALAH YANG DISELESAIKAN:
-- (dari templates/packages_context.md — sesuaikan dengan konteks tier)
+MAIN VISUAL:
+{dari templates/packages_context.md — visual theme sesuai tier}
 
-SOLUSI:
-- (dari templates/packages_context.md — sesuaikan dengan konteks tier)
+COMPOSITION:
+- Top area: clean space for "VENTURO" logo + title
+- Center: {main focal element sesuai tier}
+- Bottom: budget info + tagline
 
-HASIL:
-- (dari templates/packages_context.md — sesuaikan dengan konteks tier)
+TEXT ON IMAGE (minimal, English):
+- "{TIER}" in bold modern font
+- "VENTURO"
+- "Mulai {budget}"
 
-VISUAL THEMES:
-- (dari templates/packages_context.md — pilih yang sesuai tier)
+COLOR PALETTE:
+- Background: {dark/light sesuai tier}
+- Accent primary: #006D79 (teal)
+- Accent secondary: #009BAD (cyan)
+- Text: white (on dark) / dark (on light)
 
-STYLE KEYWORDS: (dari templates/packages_context.md)
+MOOD: {mood sesuai tier}
 
-BRAND & DESAIN:
-- Warna Primer: #006D79 (teal)
-- Warna Sekunder: #009BAD
-(include color palette lengkap)
+STYLE KEYWORDS: {dari templates/packages_context.md}
 
-DESIGN RULES:
-- WhatsApp Business catalog image, square 1:1
-- Clean, professional, modern, minimal
-- Bahasa Indonesia
-- Logo Venturo dari referensi yang diupload
-- (include user preferences dari interview)
+DO NOT include: people faces, long paragraphs, busy backgrounds, cartoonish elements.
 ```
 
 **Wajib incorporate hasil interview user:**
-- If user specified color preferences → tambahkan ke design rules
-- If user wanted specific layout/placement → tambahkan ke visual themes
-- If user has custom text/stats → sisipkan di konten
+- If user specified color preferences → tambahkan ke color palette
+- If user wanted specific layout/placement → tambahkan ke composition
+- If user has custom text/stats → tambahkan ke TEXT ON IMAGE
 
 ### Phase 3: Preview Spec (NO GENERATION)
 
-Tampilkan **full prompt** yang akan dikirim ke Dreamina, plus reference images:
+Tampilkan **final prompt** yang akan dikirim ke Dreamina (English, visual-focused), plus reference images:
 
-1. **Full prompt** (tampilkan LENGKAP, jangan dipotong)
+1. **Final prompt** (tampilkan LENGKAP, jangan dipotong)
 2. The Venturo logo (`assets/image_1c155d.png`) — uploaded as reference, AI composites it naturally
 3. **Ask for approval:** "Apakah spec ini sesuai? Saya akan generate via Dreamina dengan referensi logo Venturo. Lanjut?"
 
@@ -214,7 +210,7 @@ Wait for explicit "lanjut" / "yes" / "setuju" before proceeding.
    browser_stop()
    ```
 
-> **CRITICAL:** Kirim prompt LENGKAP ke Dreamina via `dreamina_fill_prompt`. Jangan dipotong/diringkas. Semua section (Masalah, Solusi, Hasil, Visual Themes, Brand, Design Rules, preferensi user) harus masuk semua ke prompt.
+> **CRITICAL:** Kirim prompt final (visual-focused, English) ke Dreamina via `dreamina_fill_prompt`. Jangan dipotong/diringkas. Pastikan semua elemen (Main Visual, Composition, Text, Color, Mood, preferensi user) masuk semua.
 
 ### Phase 6: Delivery
 
@@ -234,9 +230,9 @@ Wait for explicit "lanjut" / "yes" / "setuju" before proceeding.
 - **Do NOT generate or composite the logo separately.** The Venturo logo is uploaded as a reference image to Dreamina and AI composites it naturally into the design.
 - **Do NOT use Pillow or other local rendering.** The Dreamina AI engine handles ALL visual generation.
 - **Always** include the Venturo logo reference in the prompt instructions.
-- **Always use Bahasa Indonesia** untuk konten catalog.
+- **Gunakan English untuk prompt** (Dreamina render teks lebih baik dalam English), tapi konten katalog tetap Bahasa Indonesia.
 - **Login via email, NOT Google.** Jangan klik tombol Google login. Gunakan `dreamina_login()` yang sudah auto-fill email + password.
-- **Prompt harus LENGKAP & DETAIL.** Jangan pernah menyingkat atau meringkas prompt. Semua section (Masalah, Solusi, Hasil, Visual Themes, Brand, Design Rules) + preferensi user harus masuk semua. Jika user request spesifik (warna, layout, teks), incorporate ke dalam prompt.
+- **Prompt harus visual-focused, bukan business copy.** Fokus pada deskripsi visual, komposisi, warna, dan mood. Jangan menyertakan blok teks panjang (Masalah/Solusi/Hasil) — itu bukan untuk image prompt. Incorporate preferensi user ke bagian composition/color/mood.
 - **Jika MCP tool gagal**, coba sekali lagi. Jika tetap gagal, minta user melakukan step tersebut manual di browser.
 
 ## MCP Server Configuration

@@ -1,1 +1,30 @@
-A professional WhatsApp Business catalog image for Venturo 'Starter' package (Budget Rp20M-80M). Theme: Highlighting the biggest business operational problem in Indonesia (such as manual processes and rigid systems) and providing a tailored custom digital solution. Visuals include clean digital storefronts, modern UI elements, simple mobile app mockups, and a minimalist 2-person team. Colors: Venturo Teal (#006D79), light gradient, white background. Typography overlay focusing on the problem and solution in Bahasa Indonesia. Professional, minimalist, startup atmosphere. The Venturo logo is naturally integrated.
+WhatsApp Business catalog image, square 1:1, Starter package.
+
+TITLE: "STARTER" — VENTURO Software House Malang
+BUDGET: Rp20 Juta - Rp80 Juta
+
+MAIN VISUAL:
+Clean digital storefront with modern UI elements, simple mobile app mockups (Android/iOS), minimalist dashboard with basic charts and navigation.
+
+COMPOSITION:
+- Top area: clean white space for "VENTURO" logo + "STARTER" title
+- Center: floating mobile app mockup with modern UI interface
+- Bottom: "Mulai Rp20 Juta" tagline + simple decorative gradient
+
+TEXT ON IMAGE (minimal, English):
+- "STARTER" in bold condensed sans-serif
+- "VENTURO — Software House Malang"
+- "Mulai Rp20 Juta"
+
+COLOR PALETTE:
+- Background: #FFFFFF white with #F6F8F8 light gradient
+- Accent primary: #006D79 (teal)
+- Accent secondary: #009BAD (cyan)
+- Heading: #292929
+- Body: #4B5563
+
+MOOD: Professional, clean, approachable, startup-friendly, minimal.
+
+STYLE KEYWORDS: clean UI, modern storefront, minimalist, startup atmosphere, light gradient, mobile app mockup, simple dashboard
+
+DO NOT include: people faces, long paragraphs, cluttered elements, dark backgrounds.

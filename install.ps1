@@ -51,14 +51,14 @@ Write-Host "  • $PluginDirCli" -ForegroundColor Green
 # 4. Create Python virtual environment
 Write-Host ""
 Write-Host "  Creating Python virtual environment..."
-python -m venv $VenvDir
+python -m venv $VenvDir 2>&1 | Out-Null
 Write-Host "✔ Virtual environment created at $VenvDir" -ForegroundColor Green
 
 # 5. Install MCP + Playwright dependencies
 $InstalledReq = Join-Path $PluginDir "mcp-playwright/requirements.txt"
 Write-Host ""
 Write-Host "  Installing Python dependencies..."
-& $VenvPip install -r $InstalledReq
+& $VenvPip install -r $InstalledReq 2>&1 | Out-Null
 if ($LASTEXITCODE -ne 0) {
     Write-Host "  pip install failed" -ForegroundColor Yellow
     Write-Host "  Run manually: $VenvPip install -r $InstalledReq" -ForegroundColor Yellow
