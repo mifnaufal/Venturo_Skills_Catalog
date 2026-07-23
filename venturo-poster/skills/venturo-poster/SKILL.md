@@ -5,9 +5,9 @@ description: Generate WhatsApp Business catalog images for Venturo's software de
 
 # Venturo WhatsApp Business Catalog Generator
 
-Generate **WhatsApp Business catalog images** for Venturo — an Indonesian software development company — using **Qwen-Image-2.0-Pro** via ImageRouter API.
+Generate **WhatsApp Business catalog images** for Venturo — an Indonesian software development company — using **Qwen-Image-2.0-Pro** via maxrouter.io Chat Completions API.
 
-**Engine:** Qwen-Image-2.0-Pro (via ImageRouter API — imagerouter.io)
+**Engine:** Qwen-Image-2.0-Pro (via maxrouter.io — OpenAI-compatible Chat Completions)
 
 ## Design System (Venturo Brand)
 
@@ -49,21 +49,21 @@ Sebelum memulai generation, pastikan:
          "command": "python3",
          "args": ["<plugin_path>/mcp-playwright/server.py"],
          "env": {
-           "IMAGE_ROUTER_API_KEY": "ir_xxx..."
+           "IMAGE_ROUTER_API_KEY": "sk-xxx..."
          }
        }
      }
    }
    ```
 2. **Dependencies sudah terinstall** (`pip install -r <plugin_path>/mcp-playwright/requirements.txt`)
-3. **API key ImageRouter sudah diisi** di environment variable `IMAGE_ROUTER_API_KEY`
+3. **API key maxrouter.io sudah diisi** di environment variable `IMAGE_ROUTER_API_KEY`
 
 ## Available MCP Tools
 
 | Tool | Description |
 |------|-------------|
-| `generate_catalog(prompt, tier)` | Generate catalog image via Qwen-Image-2.0-Pro. Sends prompt + Venturo logo (as reference) to ImageRouter API, saves result PNG to output/. |
-| `check_balance()` | Check remaining ImageRouter credit balance. |
+| `generate_catalog(prompt, tier, image_size, aspect_ratio)` | Generate catalog image via Qwen-Image-2.0-Pro. Sends prompt + Venturo logo (as reference) to maxrouter.io Chat Completions API, saves result PNG to output/. |
+| `check_balance()` | Verify API key and connection to maxrouter.io. |
 
 ## Workflow (mandatory — follow in order)
 
@@ -127,24 +127,24 @@ Tampilkan **final prompt** yang akan dikirim (English, visual-focused), plus ref
 
 1. **Final prompt** (tampilkan LENGKAP, jangan dipotong)
 2. The Venturo logo (`assets/image_1c155d.png`) — dikirim sebagai reference image ke API, AI composites naturally
-3. **Ask for approval:** "Apakah spec ini sesuai? Saya akan generate via ImageRouter API dengan model Qwen-Image-2.0-Pro dan referensi logo Venturo. Lanjut?"
+3. **Ask for approval:** "Apakah spec ini sesuai? Saya akan generate via maxrouter.io Chat Completions API dengan model Qwen-Image-2.0-Pro dan referensi logo Venturo. Lanjut?"
 
 ### Phase 4: User Approval
 
 Wait for explicit "lanjut" / "yes" / "setuju" before proceeding.
 
-### Phase 5: Generation via ImageRouter API
+### Phase 5: Generation via maxrouter.io API
 
 Panggil MCP tools secara berurutan:
 
 **Step 1 — Generate:**
 ```
-generate_catalog(prompt="{full prompt dari Phase 2/3 — LENGKAP, jangan dipotong}", tier="{starter|growth|enterprise}")
+generate_catalog(prompt="{full prompt dari Phase 2/3 — LENGKAP, jangan dipotong}", tier="{starter|growth|enterprise}", image_size="2K", aspect_ratio="1:1")
 ```
 
 Tool ini akan:
 1. Load logo Venturo as data URI
-2. Kirim POST request ke ImageRouter API dengan model `qwen/qwen-image-2-pro`
+2. Kirim POST request ke maxrouter.io Chat Completions API dengan model `qwen-image-2.0-pro`
 3. Download hasil gambar ke `venturo-poster/output/`
 4. Return path file
 
@@ -160,8 +160,8 @@ Jika gagal:
 ✔ Katalog berhasil dibuat! Tersimpan di:
   venturo-poster/output/venturo_{tier}_{timestamp}.png
 
-  Resolusi: 1024x1024 (1:1)
-  Engine: Qwen-Image-2.0-Pro (via ImageRouter API)
+  Resolusi: {image_size} ({aspect_ratio})
+  Engine: Qwen-Image-2.0-Pro (via maxrouter.io Chat Completions API)
   Logo: AI-composited from reference image
 ```
 
@@ -195,7 +195,7 @@ Tambahkan MCP server ini ke Antigravity config (`~/.gemini/config/antigravity.js
 ```
 
 Ganti `<absolute_path>` dengan path lengkap ke `venturo-poster/mcp-playwright/server.py`.
-Ganti `<your_api_key>` dengan ImageRouter API key (dapatkan di https://imagerouter.io/api-keys).
+Ganti `<your_api_key>` dengan maxrouter.io API key.
 
 ## File Reference
 
@@ -203,8 +203,8 @@ Ganti `<your_api_key>` dengan ImageRouter API key (dapatkan di https://imagerout
 |------|---------|
 | `plugin.json` | Plugin manifest |
 | `skills/venturo-poster/SKILL.md` | This skill definition |
-| `assets/image_1c155d.png` | Official Venturo logo (sent as reference to ImageRouter API) |
-| `mcp-playwright/server.py` | ImageRouter MCP server — API-based image generation |
+| `assets/image_1c155d.png` | Official Venturo logo (sent as reference to maxrouter.io API) |
+| `mcp-playwright/server.py` | MaxRouter MCP server — Chat Completions API-based image generation |
 | `mcp-playwright/requirements.txt` | Python dependencies for MCP server |
 | `templates/packages_context.md` | Venturo service tier reference with sales copy |
 | `output/` | Generated catalog images |
