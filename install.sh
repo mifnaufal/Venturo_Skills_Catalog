@@ -5,6 +5,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PLUGIN_SRC="$SCRIPT_DIR/venturo-poster"
 PLUGIN_DIR="$HOME/.gemini/config/plugins/venturo-poster"
 PLUGIN_DIR_CLI="$HOME/.gemini/antigravity-cli/plugins/venturo-poster"
+VENV_DIR="$PLUGIN_DIR/.venv"
+VENV_PYTHON="$VENV_DIR/bin/python3"
+VENV_PIP="$VENV_DIR/bin/pip"
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -59,13 +62,37 @@ echo -e "${GREEN}✔ Plugin copied to${NC}"
 echo -e "${GREEN}  • $PLUGIN_DIR${NC}"
 echo -e "${GREEN}  • $PLUGIN_DIR_CLI${NC}"
 
-# 5. Create mcp_config.json for auto-MCP registration
+# 5. Create Python virtual environment
+echo ""
+echo "  Creating Python virtual environment..."
+python3 -m venv "$VENV_DIR"
+echo -e "${GREEN}✔ Virtual environment created at $VENV_DIR${NC}"
+
+# 6. Install MCP + Playwright dependencies
+echo ""
+echo "  Installing Python dependencies..."
+"$VENV_PIP" install -r "$PLUGIN_DIR/mcp-playwright/requirements.txt"
+echo -e "${GREEN}✔ Python dependencies installed${NC}"
+
+# 7. Install Chromium
+echo ""
+echo "  Installing Chromium browser..."
+if "$VENV_PYTHON" -c "from playwright.sync_api import sync_playwright; print('OK')" 2>/dev/null; then
+    echo -e "${GREEN}✔ Playwright ready${NC}"
+else
+    "$VENV_PYTHON" -m playwright install chromium
+    echo -e "${GREEN}✔ Chromium installed${NC}"
+fi
+
+# 8. Create mcp_config.json for auto-MCP registration
+echo ""
+echo "  Registering MCP server..."
 for dir in "$PLUGIN_DIR" "$PLUGIN_DIR_CLI"; do
     cat > "$dir/mcp_config.json" << MCPEOF
 {
   "mcpServers": {
     "venturo-poster-playwright": {
-      "command": "python3",
+      "command": "$VENV_PYTHON",
       "args": ["$dir/mcp-playwright/server.py"],
       "env": {}
     }
@@ -75,23 +102,7 @@ MCPEOF
 done
 echo -e "${GREEN}✔ MCP config registered for plugin${NC}"
 
-# 6. Install MCP + Playwright dependencies
-echo ""
-echo "  Installing Python dependencies..."
-pip3 install -r "$PLUGIN_DIR/mcp-playwright/requirements.txt" || pip install -r "$PLUGIN_DIR/mcp-playwright/requirements.txt"
-echo -e "${GREEN}✔ Python dependencies installed${NC}"
-
-# 7. Install Chromium
-echo ""
-echo "  Installing Chromium browser..."
-if python3 -c "from playwright.sync_api import sync_playwright; print('OK')" 2>/dev/null; then
-    echo -e "${GREEN}✔ Playwright ready${NC}"
-else
-    playwright install chromium 2>/dev/null || python3 -m playwright install chromium
-    echo -e "${GREEN}✔ Chromium installed${NC}"
-fi
-
-# 8. Show MCP status
+# 9. Show MCP status
 echo ""
 echo -e "${CYAN}============================================${NC}"
 echo -e "${CYAN}  MCP Server Auto-Registered${NC}"
@@ -101,13 +112,15 @@ echo "  Plugin mcp_config.json sudah dibuat di:"
 echo "    $PLUGIN_DIR/mcp_config.json"
 echo "    $PLUGIN_DIR_CLI/mcp_config.json"
 echo ""
+echo "  Menggunakan Python: $VENV_PYTHON"
+echo ""
 echo "  Antigravity akan auto-load MCP server saat plugin aktif."
 echo ""
 echo "  Jika ingin manual, tambahkan ke antigravity.json:"
 echo '  {'
 echo '    "mcpServers": {'
 echo '      "venturo-poster-playwright": {'
-echo '        "command": "python3",'
+echo "        \"command\": \"$VENV_PYTHON\","
 echo '        "args": ["'"$PLUGIN_DIR/mcp-playwright/server.py"'"],'
 echo '        "env": {}'
 echo '      }'
@@ -117,7 +130,7 @@ echo ""
 echo "  Verifikasi: agy plugin list"
 echo ""
 
-# 9. Done
+# 10. Done
 echo -e "${GREEN}✔ Venturo Poster — siap digunakan!${NC}"
 echo ""
 echo "Cara pakai:"
