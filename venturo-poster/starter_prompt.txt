@@ -1,12 +1,16 @@
 Buat gambar katalog WhatsApp Business untuk paket STARTER.
-FORMAT WAJIB: CARD PERSEGI 1:1 seperti kartu profil Instagram. Bukan banner. Bukan wide.
 
-BRIEF DESAIN:
-- Desain vertikal (portrait-ish) berbentuk kotak persegi 1:1.
-- Layout: header card di atas dengan logo Venturo, tengah = teks info paket, bawah = visual mockup phone + checklist fitur.
-- Background: putih (#FFFFFF) dengan gradien halus ke teal muda (#F6F8F8) di bagian bawah.
-- Frame visual: buatkan seolah-olah ini adalah "card" atau "profil page" WhatsApp Business catalog.
-- Teks harus terorganisir seperti list/item dengan ikon sederhana.
+FORMAT: GAMBAR DENGAN RUANG KOSONG DI KANAN.
+Area KIRI (65% lebar) = desain katalog. Area KANAN (35% lebar) = PUTIH KOSONG.
+
+LAYOUT — AREA KIRI (desain katalog):
+- Desain vertikal dengan layout 2 kolom di dalam area kiri: kiri = visual mockup, kanan = teks fitur.
+- Header di atas area kiri = branding + judul paket. Body di bawah.
+- Semua elemen katalog HARUS muat di 65% kiri gambar.
+
+LAYOUT — AREA KANAN:
+- SEMPURNA PUTIH/KOSONG. Jangan isi dengan apa pun.
+- Untuk overlay Pillow nanti (logo, teks, QR code).
 
 VENTURO — Software House Malang
 PAKET: STARTER
@@ -15,69 +19,28 @@ IDEAL UNTUK: UMKM, Usaha Mikro, Startup — butuh website, mobile app, sistem op
 TIM: 1 Business Analyst + 1 Senior Software Engineer
 TIMELINE: 1–4 Minggu
 
-KOMPOSISI PERSEGI 1:1 (HARUS SQUARE, BUKAN LANDSCAPE):
-- Buat layout portrait/vertical di dalam kotak. Headline di bagian atas tengah.
-- Di bawah headline: box teal dengan harga "Rp20 Juta – Rp80 Juta"
-- Di bawah harga: subjudul "Ideal untuk UMKM & Startup"
-- Di bawahnya: 4-5 baris checklist dengan icon checkmark (✓) — fitur utama
-- Di bawah checklist: visual mockup smartphone yang menampilkan dashboard/app
-- Di pojok kiri atas: Logo Venturo (akan di-reference dari gambar yang diupload)
-- Di bagian paling bawah: "TIM: 1 BA + 1 Sr. Engineer | 1–4 Minggu" dan "VENTURO — Software House Malang"
-
-Semua elemen harus tersebar vertikal di dalam frame persegi 1:1. Bukan horizontal. Bukan banner lebar.
-
-MASALAH YANG DISELESAIKAN:
-- Aplikasi belum sesuai kebutuhan bisnis
-- Proses bisnis menyesuaikan aplikasi, bukan sebaliknya
-- Tidak bisa kustomisasi
-- UI/UX kurang user-friendly
-
-SOLUSI:
-- Website & Mobile App custom
-- Analisis kebutuhan bisnis
-- Desain UI/UX modern & responsif
-- Fitur fleksibel dan scalable
-- Integrasi dengan sistem existing
-
-HASIL:
-- Aplikasi sesuai kebutuhan bisnis
-- Efisiensi operasional meningkat
-- UI/UX modern dan intuitif
-- Dashboard monitoring & reporting
-
-TEXT YANG HARUS ADA DI GAMBAR (huruf besar jelas):
+TEXT YANG HARUS ADA DI GAMBAR (di area kiri):
 - (atas tengah) PAKET STARTER
 - (box teal) Rp20 Juta – Rp80 Juta
 - (subjudul) Ideal untuk UMKM & Startup
-- (checklist)
-  ✓ Website & Mobile App Custom
-  ✓ UI/UX Modern & Responsif
-  ✓ Sistem Scalable & Fleksibel
-  ✓ Efisiensi Operasional Naik
-  ✓ Dashboard Monitoring
-- (footer kiri atas) Logo Venturo
-- (bawah) VENTURO — Software House Malang
+- (checklist) ✓ Website & Mobile App Custom, ✓ UI/UX Modern, ✓ Scalable, ✓ Efisiensi Naik
+- (footer) VENTURO — Software House Malang
 
-VISUAL:
-- Smartphone mockup modern menampilkan dashboard app dengan chart dan graph
-- Icon sederhana untuk setiap fitur (checkmark hijau/teal)
-- Light gradient dari putih ke teal muda
-- 2 orang ilustrasi flat-style developer yang sedang collaborate (opsional, di sudut kanan bawah)
-
-STYLE: clean UI, minimalist, startup vibe, professional, modern, flat design
+VISUAL — AREA KIRI:
+- Smartphone mockup modern menampilkan dashboard app
+- Icon checkmark teal untuk setiap fitur
+- Light gradient putih ke teal muda
+- Style: clean, minimalist, startup vibe, flat design
 
 BRAND COLORS:
 - Teal #006D79 (utama), Teal Light #009BAD (sekunder)
-- Background #FFFFFF, Light BG #F6F8F8
-- Heading #292929, Body #4B5563
-- Font: Bold condensed sans-serif untuk heading
+- Background #FFFFFF, Body #4B5563
+- Heading #292929
 
-DESIGN RULES (WAJIB):
-1. SQUARE 1:1 — CARD PORTRAIT. BUKAN BANNER LANDSCAPE. BUKAN HORIZONTAL.
-2. Layout vertikal seperti profil page / card.
-3. Bahasa Indonesia untuk semua teks.
-4. Logo Venturo dari referensi gambar yang diupload, taruh di pojok kiri atas.
+DESIGN RULES:
+1. AREA KANAN 35% harus KOSONG PUTIH total.
+2. Konten katalog muat penuh di area KIRI (65%).
+3. WhatsApp Business catalog — bersih, profesional, modern.
+4. Bahasa Indonesia untuk semua teks.
 5. Whitespace cukup, design breathable.
-6. Hierarki: judul paket > harga teal box > subjudul > checklist fitur > visual phone > footer.
-7. Teks harus jelas terbaca dan tidak terlalu rapat.
-8. Mockup smartphone terlihat clean dan modern.
+6. Hierarki: judul > harga > subjudul > checklist > footer.

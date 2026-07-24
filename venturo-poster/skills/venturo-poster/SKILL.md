@@ -1,14 +1,14 @@
 ---
 name: venturo-poster
-description: Generate WhatsApp Business catalog images for Venturo software packages (Starter/Growth/Enterprise) using Qwen-Image-2.0-Pro via maxrouter.io API. Triggers: catalog wa, katalog whatsapp, buat katalog, catalog venturo, poster venturo.
+description: Generate WhatsApp Business catalog images for Venturo software packages (Starter/Growth/Enterprise) using Cloudflare Workers AI. Triggers: catalog wa, katalog whatsapp, buat katalog, catalog venturo, poster venturo.
 ---
 
 # Venturo Poster Skill
 
-Generate **WhatsApp Business catalog images** for Venturo software packages (Starter/Growth/Enterprise) using **Qwen-Image-2.0-Pro** via maxrouter.io API.
+Generate **WhatsApp Business catalog images** for Venturo software packages (Starter/Growth/Enterprise) using **Cloudflare Workers AI**.
 
-**Engine:** Qwen-Image-2.0-Pro — maxrouter.io (`https://maxrouter.io/llm-api/v1/chat/completions`)
-**Output:** PNG, square 1:1 (1024x1024) — WhatsApp Business catalog format
+**Engine:** Self-hosted Cloudflare Worker (Workers AI — SDXL Lightning)
+**Output:** PNG, 1400x1024 — WhatsApp Business catalog + right-side blank space for Pillow overlay
 
 ## Design System (Venturo Brand)
 
@@ -25,9 +25,10 @@ Generate **WhatsApp Business catalog images** for Venturo software packages (Sta
 
 ## Output Specs
 
-- **Size:** 1024x1024 pixels (square 1:1 PERSENG SEMPURNA)
+- **Size:** 1400x1024 pixels (canvas lebar — gambar di kiri 65%, ruang kosong putih di kanan 35%)
 - **Format:** PNG
 - **Style:** WhatsApp Business catalog — clean, professional, modern, minimal
+- **Right-side space:** Area kosong putih di sisi KANAN (~490px) untuk overlay Pillow (logo, teks, QR code) oleh user
 - **Language:** Bahasa Indonesia
 
 ## Package Tiers
@@ -46,8 +47,8 @@ Ask 3-5 questions in **Bahasa Indonesia**:
 
 1. **Tier** — Starter / Growth / Enterprise
 2. **Design Preferences** — Gaya visual tertentu? Preferensi warna?
-3. **Logo** — Posisi logo Venturo? (opsional, AI atur natural)
-4. **Custom Content** — Teks/statistik khusus yang mau ditampilkan?
+3. **Overlay Content** — Apa yang mau ditaruh di space kanan? (logo Venturo, QR code, teks custom, dll?)
+4. **Custom Content** — Teks/statistik khusus yang mau ditampilkan di bagian desain?
 
 ### Phase 2: Build Detailed Prompt
 
@@ -55,13 +56,15 @@ Read `templates/packages_context.md` for tier themes and sales copy. Build a det
 
 ```
 Buat gambar katalog WhatsApp Business untuk paket {TIER_NAME}.
-FORMAT: SQUARE 1:1 (persegi sempurna 1024x1024 pixel). BUKAN BANNER LANDSCAPE.
+FORMAT: GAMBAR CATATAN PROFESIONAL DENGAN RUANG KOSONG DI KANAN.
+Bagian KIRI (65% lebar) = desain katalog. Bagian KANAN (35% lebar) = RUANG KOSONG PUTIH.
 
-KOMPOSISI — WAJIB SQUARE PERSEGI:
-- Desain layout persegi. Header di atas = branding + judul paket. Body di bawah = konten.
-- Layout 2 kolom di body: kiri = visual mockup/illustrasi, kanan = teks fitur.
-- Header bar: Nama paket besar di tengah/kanan, logo di kiri atas.
-- SEMUA elemen muat dalam frame PERSEGI. Jangan buat layout horizontal/banner.
+KOMPOSISI:
+- Desain layout 2 bagian: KIRI = konten katalog, KANAN = ruang kosong putih.
+- Konten katalog di sisi kiri (maks 65% dari lebar gambar).
+- JANGAN isi area sisi kanan dengan apapun — biarkan putih/kosong.
+- Layout vertikal di area kiri: header di atas, body di bawah.
+- Area kanan SEMPURNA PUTIH/KOSONG untuk overlay konten afterward.
 
 VENTURO — Software House Malang
 PAKET: {TIER_NAME}
@@ -104,41 +107,48 @@ BRAND & DESAIN:
 
 STYLE: {style keywords dari templates/packages_context.md}
 
+ATURAN SPASI KANAN:
+- SISAKAN RUANG KOSONG PUTIH di SISI KANAN sekitar 35% dari lebar gambar.
+- Design harus muat penuh di sisi KIRI (65% width).
+- Area kanan harus BERSIH TANPA apa pun.
+- Ini untuk overlay Pillow nanti (bisa diisi logo, teks, QR code, dll).
+
 DESIGN RULES (WAJIB DIPATUHI):
-1. FORMAT SQUARE 1:1 — PERSEGI SEMPURNA. BUKAN LANDSCAPE. BUKAN BANNER. BUKAN WIDE.
-2. WhatsApp Business catalog — bersih, profesional, modern.
-3. Bahasa Indonesia untuk semua teks.
-4. Style "Default Venturo" — teal + putih + abu. Profesional dan korporat.
-5. Logo Venturo dari referensi gambar, letakkan di kiri atas secara natural.
+1. KONTRAKSI SPASI KANAN — Area KANAN 35% harus KOSONG PUTIH.
+2. Konten katalog HARUS muat di area KIRI saja (65% width).
+3. WhatsApp Business catalog — bersih, profesional, modern.
+4. Bahasa Indonesia untuk semua teks di area desain.
+5. Style "Default Venturo" — teal + putih + abu. Profesional dan korporat.
 6. Hierarki visual: judul paket > harga > subjudul > list fitur > footer.
-7. Whitespace cukup — design breathable, jangan padat.
+7. Whitespace cukup di area desain — design breathable, jangan padat.
 8. (tambahkan preferensi user dari interview jika ada)
 ```
 
 ### Phase 3: Preview + Approval
 
 Show the full prompt + ask approval:
-> "Apakah spec ini sesuai? Saya akan generate via maxrouter.io API (Qwen-Image-2.0-Pro) dengan logo Venturo sebagai reference. Lanjut?"
+> "Apakah spec ini sesuai? Saya akan generate via Cloudflare Workers AI (SDXL Lightning). Output 1400x1024 dengan ruang kosong di kanan untuk overlay Pillow. Lanjut?"
 
 ### Phase 4: Generate & Deliver
 
 Call MCP tool:
 ```
-generate_catalog(prompt="{FULL_PROMPT}", tier="{starter|growth|enterprise}", image_size="1K", aspect_ratio="1:1")
+generate_catalog(prompt="{FULL_PROMPT}", tier="{starter|growth|enterprise}")
 ```
 
 Then deliver:
 > ✔ Katalog berhasil! Tersimpan di `venturo-poster/output/venturo_{tier}_{timestamp}.png`
+> Ukuran: 1400x1024 — sisi KANAN kosong putih (~35%) siap untuk overlay Pillow (logo/teks/QR code).
 
 ## Critical Rules
 
-- **Interview FIRST** — jangan generate langsung. Tanya tier, style, preferensi.
+- **Interview FIRST** — jangan generate langsung. Tanya tier, style, preferensi overlay.
 - **Preview THEN generate** — tampilkan full prompt, tunggu approval.
-- **SQUARE 1:1 WAJIB** — prompt harus tegas soal format persegi, bukan banner. Tulis "BUKAN BANNER LANDSCAPE".
-- **Komposisi top-bottom**, bukan left-right. Header di atas, konten di bawah.
-- **Whitespace cukup** — hindari desain terlalu padat.
-- **Logo** selalu dikirim sebagai reference image ke API, AI-compose secara natural.
-- **Post-processing** (crop + resize 1024x1024) dilakukan otomatis di server.py.
+- **Area KANAN KOSONG** — prompt HARUS instruksikan ruang kosong putih di kanan (~35%).
+- **Konten di KIRI saja** — semua elemen katalog muat di 65% kiri gambar.
+- **Whitespace cukup** — hindari desain terlalu padat di area kiri.
+- **Logo** tidak dikirim ke API lagi (Workers AI ga support multi-modal). Logo overlay dilakukan manual via Pillow setelah generate.
+- **Post-processing** (resize + paste ke canvas 1400x1024) dilakukan otomatis di server.py.
 - **Bahasa Indonesia** untuk semua prompt dan output text.
 
 ## File Reference
@@ -146,18 +156,21 @@ Then deliver:
 | Path | Purpose |
 |------|---------|
 | `plugin.json` | Antigravity plugin manifest |
-| `assets/image_1c155d.png` | Official Venturo logo (reference image ke API) |
-| `mcp-playwright/server.py` | MCP server — FastMCP app + maxrouter.io integration |
+| `cloudflare-worker.mjs` | Cloudflare Worker source code |
+| `assets/image_1c155d.png` | Official Venturo logo (untuk overlay Pillow manual) |
+| `mcp-playwright/server.py` | MCP server — FastMCP app + Cloudflare Workers AI integration |
 | `mcp-playwright/requirements.txt` | Python deps |
 | `templates/packages_context.md` | Tier themes, sales copy, visual mapping |
 | `starter_prompt.txt` | Example prompt (Starter tier) |
-| `output/` | Generated catalog images |
+| `growth_prompt.txt` | Example prompt (Growth tier) |
+| `enterprise_prompt.txt` | Example prompt (Enterprise tier) |
+| `output/` | Generated catalog images (1400x1024) |
 
 ## Troubleshooting
 
 | Problem | Solution |
 |---------|----------|
-| Gambar keluar landscape/banner | Prompt belum tegas soal "SQUARE 1:1" + "BUKAN BANNER". Tambahkan section KOMPOSISI dengan instruksi layout top-bottom. |
-| Hasil crop terlalu sempit | Server otomatis crop-center. Prompt yang lebih baik = gambar dari API yang lebih square-native. |
-| API key error | Set `IMAGE_ROUTER_API_KEY` di `.env` atau env var. |
+| Area kanan terisi konten (tidak kosong) | Prompt belum tegas "RUANG KOSONG DI KANAN". Tambahkan section ATURAN SPASI KANAN di prompt. |
+| Konten overflow area kiri | Prompt terlalu padat. Kurangi item teks atau perkecil visual theme keywords. |
+| Image generation failed / timeout | Cek CLOUDFLARE_WORKER_URL dan CLOUDFLARE_API_KEY. Pastikan Workers AI binding sudah di-set di dashboard Cloudflare. |
 | MCP module not found | Jalankan lewat venv: `.venv/bin/python` atau `pip install -r requirements.txt`. |

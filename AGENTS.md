@@ -1,7 +1,7 @@
 # Venturo Skills Catalog
 
 Project ini adalah **WhatsApp Business catalog image generator** untuk Venturo Software House.
-Gunakan **Qwen-Image-2.0-Pro** via maxrouter.io API untuk generate gambar katalog.
+Gunakan **Cloudflare Workers AI (SDXL Lightning)** via self-hosted Worker untuk generate gambar katalog. Output: 1400x1024 dengan ruang kosong di kanan untuk overlay Pillow.
 
 ## Skill: Venturo Poster
 
@@ -11,8 +11,8 @@ Agent: Load skill ini via `skill` tool saat user minta bikin katalog WhatsApp, p
 ## MCP Server
 
 Ada MCP server Python di `venturo-poster/mcp-playwright/server.py` dengan 2 tools:
-- `generate_catalog(prompt, tier, image_size, aspect_ratio)` — generate via Qwen-Image-2.0-Pro
-- `check_balance()` — verify API key
+- `generate_catalog(prompt, tier)` — generate catalog via Cloudflare Workers AI
+- `check_balance()` — verify endpoint connectivity
 
 Konfigurasi MCP ada di `.mcp.json` (project scope, shared untuk Claude Code + OpenCode).
 
@@ -36,5 +36,5 @@ pip install -r venturo-poster/mcp-playwright/requirements.txt
 
 ## API Key
 
-Set `IMAGE_ROUTER_API_KEY` di `.env` file atau environment variable.
-Dapatkan API key di: https://maxrouter.io
+Set `CLOUDFLARE_WORKER_URL` dan `CLOUDFLARE_API_KEY` di `.env` file atau environment variable.
+Deploy Worker dari `venturo-poster/cloudflare-worker.mjs`.

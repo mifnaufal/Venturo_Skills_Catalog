@@ -1,6 +1,6 @@
 {
   "$schema": "https://antigravity.google/schemas/v1/plugin.json",
   "name": "venturo-poster",
-  "description": "Generate WhatsApp Business catalog images for Venturo software packages (Starter/Growth/Enterprise) using Qwen-Image-2.0-Pro via maxrouter.io Chat Completions API. Triggers: catalog wa, katalog whatsapp, buat katalog, catalog venturo, poster venturo.",
-  "keywords": ["venturo", "catalog", "katalog", "whatsapp", "wa", "poster", "maxrouter", "qwen"]
+  "description": "Generate WhatsApp Business catalog images for Venturo software packages (Starter/Growth/Enterprise) using Cloudflare Workers AI (SDXL Lightning). Output: 1400x1024 with right-side blank space for Pillow overlay. Triggers: catalog wa, katalog whatsapp, buat katalog, catalog venturo, poster venturo.",
+  "keywords": ["venturo", "catalog", "katalog", "whatsapp", "wa", "poster", "cloudflare", "workers-ai", "sdxl"]
 }

@@ -1,14 +1,15 @@
 # Venturo Skills Catalog
 
-Generate **WhatsApp Business catalog images** for Venturo's software development packages using **Qwen-Image-2.0-Pro** (via maxrouter.io API). Logo Venturo dikirim sebagai reference image, AI composite otomatis.
+Generate **WhatsApp Business catalog images** for Venturo's software development packages using **Cloudflare Workers AI** (SDXL Lightning). Output: 1400x1024 canvas with blank right-side space for Pillow overlay.
 
-**Engine:** Qwen-Image-2.0-Pro — `$0.075/gambar` — maxrouter.io
+**Engine:** Cloudflare Workers AI — `FREE` (100K calls/day) — self-hosted Worker
 
 ## Prerequisites
 
 - Python 3.8+
+- Cloudflare account + Workers AI enabled
 - Dependencies: `pip install -r venturo-poster/mcp-playwright/requirements.txt`
-- API Key: daftar di https://maxrouter.io
+- Deployed Cloudflare Worker: `venturo-poster/cloudflare-worker.mjs`
 
 ## Project Structure
 
@@ -23,78 +24,69 @@ Venturo_Skills_Catalog/
 ├── install.sh / install.ps1           # Installers
 └── venturo-poster/
     ├── plugin.json                    # Antigravity plugin manifest
+    ├── cloudflare-worker.mjs          # Cloudflare Worker source code
     ├── skills/venturo-poster/SKILL.md # Canonical skill definition
-    ├── assets/image_1c155d.png        # Venturo logo (reference untuk AI)
+    ├── assets/image_1c155d.png        # Venturo logo (untuk overlay Pillow manual)
     ├── mcp-playwright/
-    │   ├── server.py                  # MCP server (API-based)
+    │   ├── server.py                  # MCP server (Workers AI-based)
     │   └── requirements.txt           # Python dependencies
     ├── templates/packages_context.md  # Service tier reference
-    └── output/                        # Generated images
+    ├── starter_prompt.txt             # Example prompt — Starter tier
+    ├── growth_prompt.txt              # Example prompt — Growth tier
+    ├── enterprise_prompt.txt          # Example prompt — Enterprise tier
+    └── output/                        # Generated images (1400x1024)
 ```
 
 ## Setup per Platform
 
-### Claude Code
+### Deploy Cloudflare Worker Pertama Kali
+
+```bash
+# 1. Install Wrangler CLI
+npm install -g wrangler
+
+# 2. Inisialisasi worker
+cd venturo-poster
+wrangler init venturo-img-gen
+
+# 3. Copy cloudflare-worker.mjs ke index.mjs (atau update wrangler.toml)
+
+# 4. Tambahkan AI binding di wrangler.toml:
+#    [[services]]
+#    binding = "AI"
+#    service = "@cloudflare/workers-ai"
+
+# 5. Deploy
+wrangler deploy
+# Output: https://venturo-img-gen.<subdomain>.workers.dev
+```
+
+### Setup MCP Server
 
 ```bash
 # Install dependencies
 pip install -r venturo-poster/mcp-playwright/requirements.txt
 
-# Set API key
-export IMAGE_ROUTER_API_KEY="sk-xxx..."
+# Set environment variables (.env atau shell):
+export CLOUDFLARE_WORKER_URL="https://venturo-img-gen.<your-subdomain>.workers.dev"
+export CLOUDFLARE_API_KEY="your-secret-api-key"
 
 # Start Claude Code (auto-reads .mcp.json + .claude/skills/)
 claude
 ```
 
-Atau register global:
-```bash
-claude mcp add --scope user venturo-poster -- python3 venturo-poster/mcp-playwright/server.py
-```
+### OpenCode / Antigravity
 
-### OpenCode
+Sama — set env vars di `mcp_config.json` atau `.env`, lalu jalankan sesuai platform.
 
-```bash
-# Install dependencies
-pip install -r venturo-poster/mcp-playwright/requirements.txt
+## Environment Variables
 
-# Set API key
-export IMAGE_ROUTER_API_KEY="sk-xxx..."
-
-# Start OpenCode (auto-reads .mcp.json + AGENTS.md)
-opencode
-```
-
-### Antigravity (agy)
-
-```bash
-# Quick install
-pip install -r venturo-poster/mcp-playwright/requirements.txt
-./install.sh          # Linux/macOS
-.\install.ps1         # Windows
-
-# Set API key di .env atau mcp_config.json
-# Lalu:
-agy
-```
-
-## Setup API Key
-
-Pilih salah satu:
-
-### Opsi 1 — `.env` file (recommended)
-```bash
-cp .env.example .env
-# lalu edit .env, isi API key
-```
-
-### Opsi 2 — Environment variable
-```bash
-export IMAGE_ROUTER_API_KEY="sk-xxx..."
-```
-
-### Opsi 3 — MCP config
-Isi `IMAGE_ROUTER_API_KEY` di `env` field `.mcp.json` atau `mcp_config.json`.
+| Variable | Purpose | Required |
+|---|---|---|
+| `CLOUDFLARE_WORKER_URL` | URL Cloudflare Worker endpoint | Yes |
+| `CLOUDFLARE_API_KEY` | API key untuk auth Worker | Yes |
+| `CANVAS_WIDTH` | Output canvas width (default: 1400) | No |
+| `CANVAS_HEIGHT` | Output canvas height (default: 1024) | No |
 
 ## Cara Pakai
 
@@ -104,11 +96,12 @@ Di agent prompt, bilang aja:
 - "poster venturo buat client"
 
 AI agent akan:
-1. Wawancara user (tier, preferensi desain, konten custom)
-2. Bangun prompt detail untuk Qwen-Image
+1. Wawancara user (tier, preferensi desain, overlay content)
+2. Bangun prompt detail (dengan instruksi ruang kosong kanan)
 3. Tampilkan preview spec untuk approval
-4. Generate via maxrouter.io API — < 10 detik
-5. Kirim hasil ke user
+4. Generate via Cloudflare Workers AI — ~15-30 detik
+5. Output: gambar 1400x1024 dengan space kanan kosong siap overlay Pillow
+6. Kirim hasil ke user
 
 ## Package Tiers
 
