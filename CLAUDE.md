@@ -26,8 +26,3 @@ claude mcp add --scope user venturo-poster -- python3 venturo-poster/mcp-playwri
 ```bash
 pip install -r venturo-poster/mcp-playwright/requirements.txt
 ```
-
-## API Key
-
-Set `CLOUDFLARE_WORKER_URL` dan `CLOUDFLARE_API_KEY` di `.env` atau environment variable.
-Deploy worker dari `venturo-poster/cloudflare-worker.mjs`.
