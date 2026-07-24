@@ -141,6 +141,132 @@ async def generate_catalog(tier: str = "starter", theme: str = "default") -> str
 # to assets/canvas-fonts/*.ttf via a dev HTTP server.
 
 
+# ── Core CSS shared by ALL templates (default + themed) ──
+_BASE_CSS = """
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  width: 1400px;
+  height: 1024px;
+  font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+  overflow: hidden;
+}
+.canvas {
+  width: 1400px;
+  height: 1024px;
+  display: grid;
+  grid-template-columns: 910px 490px;
+  position: relative;
+}
+.content {
+  width: 910px;
+  height: 1024px;
+  padding: 60px 60px 60px 70px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+.right-space {
+  width: 490px;
+  height: 1024px;
+  background: #FFFFFF;
+}
+.brand {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+.subbrand {
+  font-size: 14px;
+  margin-bottom: 40px;
+  letter-spacing: 1px;
+}
+h1.tier-name {
+  font-size: 88px;
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: -2px;
+  margin-bottom: 18px;
+}
+.budget-box {
+  display: inline-block;
+  padding: 12px 28px;
+  border-radius: 8px;
+  font-size: 32px;
+  font-weight: 800;
+  margin-bottom: 24px;
+  letter-spacing: -0.5px;
+}
+.tagline {
+  font-size: 22px;
+  font-weight: 500;
+  line-height: 1.3;
+  margin-bottom: 36px;
+  max-width: 720px;
+}
+.section-label {
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-bottom: 12px;
+}
+.features {
+  list-style: none;
+  margin-bottom: 28px;
+}
+.features li {
+  font-size: 18px;
+  padding: 8px 0;
+  display: flex;
+  align-items: center;
+}
+.features li::before {
+  content: "✓";
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  font-size: 14px;
+  font-weight: 900;
+  margin-right: 14px;
+  flex-shrink: 0;
+}
+.meta-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px 32px;
+  margin-top: auto;
+  padding-top: 20px;
+  border-top: 1px solid currentColor;
+}
+.meta-grid .meta-label {
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  opacity: 0.7;
+  margin-bottom: 6px;
+}
+.meta-grid .meta-value {
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+.footer {
+  position: absolute;
+  bottom: 30px;
+  left: 70px;
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  opacity: 0.5;
+  text-transform: uppercase;
+}
+"""
+
 _STARTER_MINIMALIST_HTML = f"""<!DOCTYPE html>
 <html><head><meta charset="utf-8"><style>{_BASE_CSS}
 .content {{
@@ -506,136 +632,6 @@ _THEME_VARIANTS: dict[str, dict[str, str]] = {
     },
 }
 
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Tier templates
-# Right 35% (~490px) is intentionally blank white for further overlay.
-# ─────────────────────────────────────────────────────────────────────────────
-
-_BASE_CSS = """
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body {
-  width: 1400px;
-  height: 1024px;
-  font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
-  overflow: hidden;
-}
-.canvas {
-  width: 1400px;
-  height: 1024px;
-  display: grid;
-  grid-template-columns: 910px 490px;
-  position: relative;
-}
-.content {
-  width: 910px;
-  height: 1024px;
-  padding: 60px 60px 60px 70px;
-  display: flex;
-  flex-direction: column;
-  position: relative;
-}
-.right-space {
-  width: 490px;
-  height: 1024px;
-  background: #FFFFFF;
-}
-.brand {
-  font-size: 18px;
-  font-weight: 700;
-  letter-spacing: 3px;
-  text-transform: uppercase;
-  margin-bottom: 12px;
-}
-.subbrand {
-  font-size: 14px;
-  margin-bottom: 40px;
-  letter-spacing: 1px;
-}
-h1.tier-name {
-  font-size: 88px;
-  font-weight: 900;
-  line-height: 1;
-  letter-spacing: -2px;
-  margin-bottom: 18px;
-}
-.budget-box {
-  display: inline-block;
-  padding: 12px 28px;
-  border-radius: 8px;
-  font-size: 32px;
-  font-weight: 800;
-  margin-bottom: 24px;
-  letter-spacing: -0.5px;
-}
-.tagline {
-  font-size: 22px;
-  font-weight: 500;
-  line-height: 1.3;
-  margin-bottom: 36px;
-  max-width: 720px;
-}
-.section-label {
-  font-size: 12px;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 2px;
-  margin-bottom: 12px;
-}
-.features {
-  list-style: none;
-  margin-bottom: 28px;
-}
-.features li {
-  font-size: 18px;
-  padding: 8px 0;
-  display: flex;
-  align-items: center;
-}
-.features li::before {
-  content: "✓";
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  font-size: 14px;
-  font-weight: 900;
-  margin-right: 14px;
-  flex-shrink: 0;
-}
-.meta-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 18px 32px;
-  margin-top: auto;
-  padding-top: 20px;
-  border-top: 1px solid currentColor;
-}
-.meta-grid .meta-label {
-  font-size: 11px;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 1.5px;
-  opacity: 0.7;
-  margin-bottom: 6px;
-}
-.meta-grid .meta-value {
-  font-size: 16px;
-  font-weight: 600;
-  line-height: 1.3;
-}
-.footer {
-  position: absolute;
-  bottom: 30px;
-  left: 70px;
-  font-size: 11px;
-  letter-spacing: 1.5px;
-  opacity: 0.5;
-  text-transform: uppercase;
-}
-"""
 
 _STARTER_HTML = f"""<!DOCTYPE html>
 <html><head><meta charset="utf-8"><style>{_BASE_CSS}
