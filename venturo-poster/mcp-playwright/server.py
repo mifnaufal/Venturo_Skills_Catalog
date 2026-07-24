@@ -129,14 +129,15 @@ def _call_cloudflare_ai(
         raise ValueError(f"Cloudflare AI API failed: {error_msgs}\nFull response: {data}")
 
     result = data.get("result", {})
-    # Try different possible fields for image data
-    content_value = result.get("data") or result.get("result") or result.get("images")
+    # Cloudflare AI image models return image as result.image (base64)
+    # Sometimes nested in result.data or as a list
+    content_value = result.get("image") or result.get("data") or result.get("result")
     if isinstance(content_value, list) and len(content_value) > 0:
         content_value = content_value[0]
 
     img_bytes = _parse_image_from_response(content_value)
     if img_bytes is None:
-        # Fallback: treat full result as base64
+        # Fallback: treat as base64 directly
         raw_str = str(content_value) if content_value else str(result)
         try:
             img_bytes = base64.b64decode(raw_str)
