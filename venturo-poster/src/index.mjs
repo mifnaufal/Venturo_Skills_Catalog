@@ -1,0 +1,114 @@
+/**
+ * Venturo Image Generation Worker
+ * Cloudflare Workers AI wrapper for catalog image generation.
+ * Accepts POST {"prompt": "..."} and returns raw PNG image binary.
+ *
+ * Required bindings:
+ *   AI -> Cloudflare Workers AI (service binding)
+ *
+ * Environment variables:
+ *   API_KEY -> your secret API key for auth
+ */
+
+const MODEL = '@cf/black-forest-labs/flux-2-klein-9b';
+
+export default {
+  async fetch(request, env) {
+    // CORS headers for browser/MCP callers
+    const headers = corsHeaders();
+
+    if (request.method === 'OPTIONS') {
+      return new Response(null, { headers });
+    }
+
+    if (request.method !== 'POST') {
+      return new Response(
+        JSON.stringify({ error: 'Only POST allowed' }),
+        { status: 405, headers: { ...headers, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Authenticate via X-API-Key header or body field
+    const apiKey = request.headers.get('X-API-Key') || '';
+    const body = await request.json().catch(() => ({}));
+    const bodyApiKey = body.api_key || '';
+
+    const validKey = String(env.API_KEY || '');
+    if (validKey && !apiKey && !bodyApiKey) {
+      return new Response(
+        JSON.stringify({ error: 'Missing API key. Provide via X-API-Key header or body.api_key' }),
+        { status: 401, headers: { ...headers, 'Content-Type': 'application/json' } }
+      );
+    }
+    if (validKey && apiKey !== validKey && bodyApiKey !== validKey) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid API key' }),
+        { status: 403, headers: { ...headers, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const prompt = body.prompt || '';
+    if (!prompt.trim()) {
+      return new Response(
+        JSON.stringify({ error: 'Prompt is required' }),
+        { status: 400, headers: { ...headers, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    try {
+      const aiParams = {
+        prompt: prompt,
+        aspect_ratio: body.aspect_ratio || '1:1',
+        output_format: body.output_format || 'png',
+        resolution: body.resolution || '1K',
+      };
+      if (Array.isArray(body.image_input) && body.image_input.length > 0) {
+        aiParams.image_input = body.image_input.slice(0, 3); // max 3 per schema
+      }
+
+      const response = await env.AI.run(MODEL, aiParams);
+
+      // Workers AI returns image as { image: "<base64>" } depending on model
+      let imageData;
+      if (response && response.image) {
+        imageData = Buffer.from(response.image, 'base64');
+      } else if (response && response.data) {
+        imageData = Buffer.from(response.data, 'base64');
+      } else {
+        // Fallback: try to find base64 string anywhere in result
+        const str = JSON.stringify(response);
+        const match = str.match(/"[A-Za-z0-9+\/]{1000,}={0,2}"/);
+        if (match) {
+          imageData = Buffer.from(match[0].replace(/"/g, ''), 'base64');
+        } else {
+          throw new Error('Unexpected AI response format: no image data found');
+        }
+      }
+
+      const outputFormat = aiParams.output_format || 'png';
+      const mime = outputFormat === 'jpg' ? 'image/jpeg' : 'image/png';
+
+      return new Response(imageData, {
+        headers: {
+          ...headers,
+          'Content-Type': mime,
+          'Cache-Control': 'no-cache',
+        },
+      });
+    } catch (err) {
+      console.error('Image generation failed:', err.message);
+      return new Response(
+        JSON.stringify({ error: 'Image generation failed', details: err.message }),
+        { status: 500, headers: { ...headers, 'Content-Type': 'application/json' } }
+      );
+    }
+  },
+};
+
+function corsHeaders() {
+  return {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, X-API-Key',
+  };
+}

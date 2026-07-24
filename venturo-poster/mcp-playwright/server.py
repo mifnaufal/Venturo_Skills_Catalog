@@ -39,57 +39,25 @@ if _ENV_PATH.exists():
                 os.environ.setdefault(_k.strip(), _v.strip().strip("\"'"))
 
 # ── Configuration ────────────────────────────────────────────────────────────
-CLOUDFLARE_ACCOUNT_ID = os.environ.get("CLOUDFLARE_ACCOUNT_ID", "")
-CLOUDFLARE_AUTH_TOKEN = os.environ.get("CLOUDFLARE_AUTH_TOKEN", "")
-CLOUDFLARE_MODEL = os.environ.get("CLOUDFLARE_MODEL", "google/nano-banana-2-lite")
+WORKER_URL = os.environ.get("CLOUDFLARE_WORKER_URL", "")
+WORKER_API_KEY = os.environ.get("CLOUDFLARE_API_KEY", "")  # key used to authenticate with Worker
 IMAGE_ROUTER_API_KEY = os.environ.get("IMAGE_ROUTER_API_KEY", "")  # legacy, kept for backwards compat
 
 CANVAS_WIDTH = int(os.environ.get("CANVAS_WIDTH", "1400"))
 CANVAS_HEIGHT = int(os.environ.get("CANVAS_HEIGHT", "1024"))
 
-AI_API_BASE = "https://api.cloudflare.com/client/v4/accounts/{account_id}/ai/run/{model}"
 
-
-def _get_api_url() -> str:
-    if not CLOUDFLARE_ACCOUNT_ID or not CLOUDFLARE_MODEL:
-        raise ValueError("CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_MODEL must be set.")
-    return AI_API_BASE.format(account_id=CLOUDFLARE_ACCOUNT_ID, model=CLOUDFLARE_MODEL)
-
-
-def _get_auth_headers() -> dict:
-    if not CLOUDFLARE_AUTH_TOKEN:
-        raise ValueError("CLOUDFLARE_AUTH_TOKEN not set.")
-    return {"Authorization": f"Bearer {CLOUDFLARE_AUTH_TOKEN}", "Content-Type": "application/json"}
+def _get_logo_b64() -> str:
+    """Return Venturo logo as a base64 string for image_input."""
+    if not LOGO_PATH.exists():
+        raise FileNotFoundError(f"Logo not found at {LOGO_PATH}")
+    return base64.b64encode(LOGO_PATH.read_bytes()).decode()
 
 
 def _logo_data_uri() -> str:
     """Return Venturo logo as a data URI for image_input."""
-    if not LOGO_PATH.exists():
-        raise FileNotFoundError(f"Logo not found at {LOGO_PATH}")
-    data = LOGO_PATH.read_bytes()
-    b64 = base64.b64encode(data).decode()
-    return f"data:image/png;base64,{b64}"
+    return f"data:image/png;base64,{_get_logo_b64()}"
 
-
-def _parse_image_from_response(content_value) -> bytes | None:
-    """Extract image bytes from Cloudflare AI response value field.
-
-    Possible formats depending on model:
-    - { image: "base64string" } (binary image returned as base64)
-    - A base64 string directly
-    """
-    if isinstance(content_value, str):
-        # Might be base64-encoded image
-        try:
-            return base64.b64decode(content_value)
-        except Exception:
-            return None
-    if isinstance(content_value, dict):
-        if "image" in content_value:
-            return base64.b64decode(content_value["image"])
-        if "data" in content_value:
-            return base64.b64decode(content_value["data"]) if isinstance(content_value["data"], str) else None
-    return None
 
 
 def _call_cloudflare_ai(
@@ -98,9 +66,9 @@ def _call_cloudflare_ai(
     resolution: str = "1K",
     include_logo: bool = True,
 ) -> bytes:
-    """Call Cloudflare Workers AI HTTP API and return image bytes."""
-    api_url = _get_api_url()
-    auth_headers = _get_auth_headers()
+    """Call Cloudflare Worker and return image bytes."""
+    if not WORKER_URL:
+        raise ValueError("CLOUDFLARE_WORKER_URL not set.")
 
     payload = {
         "prompt": prompt,
@@ -114,38 +82,18 @@ def _call_cloudflare_ai(
         except FileNotFoundError as exc:
             logger.warning("Logo not found, skipping image_input: %s", exc)
 
-    logger.info("Calling Cloudflare AI: %s with prompt length=%d", api_url, len(prompt))
-    resp = requests.post(api_url, json=payload, headers=auth_headers, timeout=180)
+    headers = {"Content-Type": "application/json"}
+    if WORKER_API_KEY:
+        headers["X-API-Key"] = WORKER_API_KEY
+
+    logger.info("Calling Worker: %s with prompt length=%d", WORKER_URL, len(prompt))
+    resp = requests.post(WORKER_URL, json=payload, headers=headers, timeout=180)
     resp.raise_for_status()
 
-    data = resp.json()
-
-    # Cloudflare AI API returns structured response:
-    # { success: true, result: { ... }, errors: [...], messages: [...] }
-    # Image models typically put image data in result.data or result.result
-    if not data.get("success"):
-        errors = data.get("errors", [])
-        error_msgs = "; ".join(e.get("message", "") for e in errors) if errors else "Unknown error"
-        raise ValueError(f"Cloudflare AI API failed: {error_msgs}\nFull response: {data}")
-
-    result = data.get("result", {})
-    # Cloudflare AI image models return image as result.image (base64)
-    # Sometimes nested in result.data or as a list
-    content_value = result.get("image") or result.get("data") or result.get("result")
-    if isinstance(content_value, list) and len(content_value) > 0:
-        content_value = content_value[0]
-
-    img_bytes = _parse_image_from_response(content_value)
-    if img_bytes is None:
-        # Fallback: treat as base64 directly
-        raw_str = str(content_value) if content_value else str(result)
-        try:
-            img_bytes = base64.b64decode(raw_str)
-        except Exception:
-            raise ValueError(f"Could not extract image from response: {data}")
-
+    # Worker returns raw PNG bytes directly
+    img_bytes = resp.content
     if not img_bytes:
-        raise ValueError(f"Empty image bytes received from API")
+        raise ValueError(f"Empty image bytes received from Worker")
 
     return img_bytes
 
@@ -247,29 +195,23 @@ async def generate_catalog(
 
 @mcp.tool()
 async def check_balance() -> str:
-    """Check if Cloudflare AI API is reachable and the model is available."""
-    if not CLOUDFLARE_AUTH_TOKEN:
-        return "Config error: CLOUDFLARE_AUTH_TOKEN not set."
-    if not CLOUDFLARE_ACCOUNT_ID:
-        return "Config error: CLOUDFLARE_ACCOUNT_ID not set."
+    """Check if the Worker is reachable and responding."""
+    if not WORKER_URL:
+        return "Config error: CLOUDFLARE_WORKER_URL not set."
 
     try:
-        auth_headers = {"Authorization": f"Bearer {CLOUDFLARE_AUTH_TOKEN}", "Content-Type": "application/json"}
-
-        # Check if model is available
-        model_url = f"https://api.cloudflare.com/client/v4/accounts/{CLOUDFLARE_ACCOUNT_ID}/ai/models/{CLOUDFLARE_MODEL}"
-        resp = requests.get(model_url, headers=auth_headers, timeout=10)
-
+        resp = requests.post(WORKER_URL, json={"prompt": "test"}, timeout=10)
         if resp.status_code == 200:
-            data = resp.json()
-            status = data.get("result", {}).get("status", "unknown")
-            return f"Model '{CLOUDFLARE_MODEL}' is available. Status: {status}."
-        elif resp.status_code == 404:
-            return f"Model '{CLOUDFLARE_MODEL}' not found. Available models: check Cloudflare dashboard > Workers & Pages > AI > Models."
+            # Got image bytes — worker is healthy
+            size = len(resp.content)
+            return f"Worker is healthy. Response size: {size} bytes."
+        elif resp.status_code == 400:
+            # Prompt empty error (expected for test prompt? maybe not)
+            return f"Worker responded with {resp.status_code}. Might need a valid prompt for test."
         else:
-            return f"Cloudflare AI API returned status {resp.status_code}. Make sure your account has Workers AI enabled."
+            return f"Worker returned status {resp.status_code}: {resp.text[:300]}"
     except Exception as exc:
-        return f"Error reaching Cloudflare AI API: {exc}"
+        return f"Error reaching Worker: {exc}"
 
 
 if __name__ == "__main__":
