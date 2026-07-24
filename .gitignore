@@ -1,8 +1,23 @@
+# Python
 venv/
+.venv/
 __pycache__/
 *.pyc
 .pytest_cache/
+
+# Generated output
 conversations/
-output/
+venturo-poster/output/
+
+# Environment
 .env
+
+# Logs
 *.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Package locks (safety)
+node_modules/
