@@ -27,3 +27,4 @@ node_modules/
 
 # Canvas fonts (kept in repo — comment out to ignore)
 # venturo-poster/assets/canvas-fonts/
+.playwright-mcp

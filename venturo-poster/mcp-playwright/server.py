@@ -1,13 +1,10 @@
 #!/usr/bin/env python3
 
 import asyncio
-import io
 import logging
 import sys
 import time
 from pathlib import Path
-
-from PIL import Image
 
 from mcp.server.fastmcp import FastMCP
 from playwright.async_api import async_playwright
@@ -22,12 +19,23 @@ logging.basicConfig(
 logger = logging.getLogger("venturo-poster")
 
 PLUGIN_ROOT = Path(__file__).resolve().parent.parent
-LOGO_PATH = PLUGIN_ROOT / "assets" / "image_1c155d.png"
 OUTPUT_DIR = PLUGIN_ROOT / "output"
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
-CANVAS_WIDTH = 1400
+CANVAS_WIDTH = 1024
 CANVAS_HEIGHT = 1024
+
+# Venturo brand mark — rendered as inline SVG so it's pixel-perfect at any DPI
+VENTURO_LOGO_SVG = (
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 29" '
+    'class="venturo-logo" aria-label="Venturo">'
+    '<text x="0" y="22" font-family="Inter, Arial, sans-serif" '
+    'font-size="22" font-weight="800" letter-spacing="2" fill="currentColor">'
+    'VENTURO'
+    '</text>'
+    '<circle cx="118" cy="14" r="4" fill="#FF6B35"/>'
+    '</svg>'
+)
 
 
 def _render_tier_html(tier: str, theme: str = "default") -> str:
@@ -45,39 +53,13 @@ def _render_tier_html(tier: str, theme: str = "default") -> str:
     raise ValueError(f"Unknown tier: {tier}")
 
 
-def _with_logo_overlay(png_bytes: bytes, tier: str) -> bytes:
-    """Open rendered PNG, overlay logo on right-side white space. Returns new PNG bytes."""
-    img = Image.open(io.BytesIO(png_bytes)).convert("RGBA")
-    if img.size != (CANVAS_WIDTH, CANVAS_HEIGHT):
-        img = img.resize((CANVAS_WIDTH, CANVAS_HEIGHT), Image.LANCZOS)
-
-    if LOGO_PATH.exists():
-        try:
-            logo = Image.open(LOGO_PATH).convert("RGBA")
-            target_h = 120
-            ratio = target_h / logo.height
-            logo = logo.resize(
-                (int(logo.width * ratio), target_h), Image.LANCZOS
-            )
-            margin = 30
-            x = CANVAS_WIDTH - logo.width - margin
-            y = CANVAS_HEIGHT - logo.height - margin
-            img.paste(logo, (x, y), logo)
-        except Exception as exc:
-            logger.warning("Logo overlay skipped: %s", exc)
-
-    out = io.BytesIO()
-    img.save(out, "PNG")
-    return out.getvalue()
-
-
 async def _render_html_to_png(html: str) -> bytes:
-    """Use Playwright to screenshot HTML at exactly CANVAS_WIDTH x CANVAS_HEIGHT."""
+    """Render HTML to a crisp PNG via Playwright at 2x DPI, then downscale."""
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True)
         context = await browser.new_context(
             viewport={"width": CANVAS_WIDTH, "height": CANVAS_HEIGHT},
-            device_scale_factor=1,
+            device_scale_factor=2,
         )
         page = await context.new_page()
         await page.set_content(html, wait_until="networkidle")
@@ -86,41 +68,41 @@ async def _render_html_to_png(html: str) -> bytes:
             clip={"x": 0, "y": 0, "width": CANVAS_WIDTH, "height": CANVAS_HEIGHT},
         )
         await browser.close()
-        return png
+        # Downscale 2x → 1x for sharp final output
+        from PIL import Image
+        import io
+        img = Image.open(io.BytesIO(png))
+        if img.size != (CANVAS_WIDTH, CANVAS_HEIGHT):
+            img = img.resize((CANVAS_WIDTH, CANVAS_HEIGHT), Image.LANCZOS)
+        out = io.BytesIO()
+        img.save(out, "PNG")
+        return out.getvalue()
 
 
 @mcp.tool()
-async def generate_catalog(tier: str = "starter", theme: str = "default") -> str:
-    """Generate a WhatsApp Business catalog PNG for a Venturo package tier.
+async def generate_catalog(tier: str = "starter") -> str:
+    """Generate a 1024x1024 WhatsApp Business catalog PNG for a Venturo package tier.
 
-    Builds HTML/CSS design for the selected tier and optional theme variant,
-    renders to 1400x1024 PNG via Playwright, then overlays Venturo logo
-    on the right-side white space using Pillow.
+    Builds HTML/CSS design for the selected tier with Venturo brand styling,
+    renders to a square PNG via Playwright at 2x DPI for crisp output.
     """
     tier = tier.lower().strip()
-    theme = theme.lower().strip()
     if tier not in ("starter", "growth", "enterprise"):
         return f"Error: tier must be starter/growth/enterprise, got '{tier}'"
-    if theme != "default" and theme not in _THEME_VARIANTS:
-        available = ", ".join(sorted(_THEME_VARIANTS.keys()))
-        return f"Error: theme must be 'default' or one of: {available}"
 
-    html = _render_tier_html(tier, theme)
+    html = _render_tier_html(tier)
     logger.info(
-        "Rendering tier=%s theme=%s via Playwright %dx%d",
-        tier, theme, CANVAS_WIDTH, CANVAS_HEIGHT,
+        "Rendering tier=%s via Playwright %dx%d",
+        tier, CANVAS_WIDTH, CANVAS_HEIGHT,
     )
 
     try:
-        png_bytes = await _render_html_to_png(html)
+        final_bytes = await _render_html_to_png(html)
     except Exception as exc:
         return f"Error rendering HTML: {exc}"
 
-    final_bytes = _with_logo_overlay(png_bytes, tier)
-
     timestamp = time.strftime("%Y%m%d-%H%M%S")
-    suffix = f"-{theme}" if theme != "default" else ""
-    filename = f"venturo-{tier}{suffix}-{timestamp}.png"
+    filename = f"venturo-{tier}-{timestamp}.png"
     output_path = OUTPUT_DIR / filename
     output_path.write_bytes(final_bytes)
     logger.info("Saved %s (%d bytes)", output_path, len(final_bytes))
@@ -129,530 +111,209 @@ async def generate_catalog(tier: str = "starter", theme: str = "default") -> str
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Theme variants — alternative designs driven by theme-factory skill
-# Each theme maps: tier -> HTML string override. Visual treatment + colors
-# per theme are documented in venturo-poster/themes/<tier>/<theme>.md
+# Each theme maps: tier -> HTML string override.
+# Visual treatment per theme documented in venturo-poster/themes/<tier>/<theme>.md
 # ─────────────────────────────────────────────────────────────────────────────
 
-# NOTE: canvas-fonts/ has OpenType fonts but Playwright headless
-# Chromium on this Linux machine cannot load them without an external
-# file-server. The themed variants below rely solely on system fonts
-# (system sans-serif, monospace).  For local-dev with installed fonts,
-# the _BASE_CSS can be augmented with a real @font-face block pointing
-# to assets/canvas-fonts/*.ttf via a dev HTTP server.
 
-
-# ── Core CSS shared by ALL templates (default + themed) ──
+# ── Core CSS shared by ALL templates (square 1024×1024 poster) ──
 _BASE_CSS = """
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body {
-  width: 1400px;
+  width: 1024px;
   height: 1024px;
   font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
   overflow: hidden;
 }
-.canvas {
-  width: 1400px;
+.poster {
+  width: 1024px;
   height: 1024px;
-  display: grid;
-  grid-template-columns: 910px 490px;
   position: relative;
-}
-.content {
-  width: 910px;
-  height: 1024px;
-  padding: 60px 60px 60px 70px;
   display: flex;
   flex-direction: column;
-  position: relative;
-}
-.right-space {
-  width: 490px;
-  height: 1024px;
-  background: #FFFFFF;
+  padding: 64px 64px 56px 64px;
 }
 .brand {
-  font-size: 18px;
-  font-weight: 700;
-  letter-spacing: 3px;
-  text-transform: uppercase;
-  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  margin-bottom: 4px;
 }
-.subbrand {
-  font-size: 14px;
-  margin-bottom: 40px;
-  letter-spacing: 1px;
+.venturo-logo {
+  height: 28px;
+  width: auto;
 }
-h1.tier-name {
-  font-size: 88px;
+.tier-name {
+  font-size: 112px;
   font-weight: 900;
-  line-height: 1;
-  letter-spacing: -2px;
-  margin-bottom: 18px;
+  line-height: 1.0;
+  letter-spacing: -4px;
+  margin-bottom: 28px;
 }
 .budget-box {
   display: inline-block;
-  padding: 12px 28px;
-  border-radius: 8px;
-  font-size: 32px;
+  padding: 14px 32px;
+  border-radius: 10px;
+  font-size: 28px;
   font-weight: 800;
-  margin-bottom: 24px;
-  letter-spacing: -0.5px;
+  margin-bottom: 32px;
 }
 .tagline {
-  font-size: 22px;
-  font-weight: 500;
-  line-height: 1.3;
-  margin-bottom: 36px;
-  max-width: 720px;
+  font-size: 20px;
+  font-weight: 400;
+  line-height: 1.55;
+  margin-bottom: 40px;
+  max-width: 880px;
 }
 .section-label {
   font-size: 12px;
   font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 2px;
-  margin-bottom: 12px;
+  letter-spacing: 4px;
+  margin-bottom: 20px;
 }
 .features {
   list-style: none;
-  margin-bottom: 28px;
+  margin-bottom: 36px;
 }
 .features li {
   font-size: 18px;
-  padding: 8px 0;
+  font-weight: 500;
+  padding: 10px 0;
   display: flex;
   align-items: center;
+  border-bottom: 1px solid rgba(128,128,128,0.1);
+}
+.features li:last-child {
+  border-bottom: none;
 }
 .features li::before {
   content: "✓";
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   font-size: 14px;
   font-weight: 900;
-  margin-right: 14px;
+  margin-right: 18px;
   flex-shrink: 0;
 }
-.meta-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 18px 32px;
-  margin-top: auto;
-  padding-top: 20px;
-  border-top: 1px solid currentColor;
+.detail-section {
+  margin-bottom: 16px;
 }
-.meta-grid .meta-label {
-  font-size: 11px;
+.detail-label {
+  font-size: 10px;
   font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 1.5px;
-  opacity: 0.7;
+  letter-spacing: 2.5px;
+  opacity: 0.5;
   margin-bottom: 6px;
 }
-.meta-grid .meta-value {
+.detail-value {
   font-size: 16px;
-  font-weight: 600;
-  line-height: 1.3;
+  font-weight: 700;
+  line-height: 1.4;
 }
-.footer {
+.meta-strip {
+  margin-top: auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px 48px;
+  padding-top: 28px;
+  border-top: 1.5px solid currentColor;
+}
+.meta-strip .meta-item .detail-label {
+  margin-bottom: 8px;
+}
+.meta-strip .meta-item .detail-value {
+  font-size: 17px;
+  font-weight: 700;
+}
+.footer-brand {
   position: absolute;
-  bottom: 30px;
-  left: 70px;
+  bottom: 22px;
+  left: 64px;
   font-size: 11px;
   letter-spacing: 1.5px;
-  opacity: 0.5;
   text-transform: uppercase;
+  opacity: 0.35;
+  font-weight: 700;
+}
+.content-top {
+  display: flex;
+  flex-direction: column;
+}
+.content-body {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 48px 64px;
+  margin-top: auto;
+  padding-top: 24px;
+}
+.content-body-left {
+  display: flex;
+  flex-direction: column;
+}
+.content-body-right {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.highlight-card {
+  background: rgba(128,128,128,0.04);
+  border-radius: 12px;
+  padding: 20px 24px;
+  margin-bottom: 12px;
+}
+.highlight-card .detail-label {
+  font-size: 9px;
+  letter-spacing: 2px;
+  margin-bottom: 6px;
+}
+.highlight-card .detail-value {
+  font-size: 15px;
 }
 """
-
-_STARTER_MINIMALIST_HTML = f"""<!DOCTYPE html>
-<html><head><meta charset="utf-8"><style>{_BASE_CSS}
-.content {{
-  background: linear-gradient(180deg, #f9f9f9 0%, #ffffff 100%);
-  color: #36454f;
-  border-left: 4px solid #006D79;
-  position: relative;
-}}
-.content::after {{
-  content: "";
-  position: absolute; inset: 0;
-  background-image: radial-gradient(#708090 1px, transparent 1px);
-  background-size: 28px 28px;
-  opacity: 0.05;
-  pointer-events: none;
-}}
-.content > * {{ position: relative; }}
-.brand {{ color: #006D79; font-family: 'Outfit', sans-serif; }}
-.subbrand {{ color: #708090; }}
-h1.tier-name {{ color: #36454f; font-family: 'Outfit', sans-serif; }}
-.budget-box {{ background: #36454f; color: #ffffff; font-family: 'Outfit', sans-serif; }}
-.tagline {{ color: #4b5563; font-family: 'InstrumentSans', sans-serif; }}
-.section-label {{ color: #006D79; letter-spacing: 3px; }}
-.features li::before {{ background: transparent; color: #006D79; border: 2px solid #006D79; }}
-.features li {{ color: #36454f; font-family: 'InstrumentSans', sans-serif; }}
-.meta-grid {{ color: #708090; border-top-color: #d3d3d3; }}
-.meta-grid .meta-value {{ color: #36454f; }}
-.footer {{ color: #708090; }}
-</style></head><body><div class="canvas">
-<div class="content">
-  <div class="brand">VENTURO</div>
-  <div class="subbrand">Software House Malang</div>
-  <h1 class="tier-name">PAKET<br>STARTER</h1>
-  <div class="budget-box">Rp20 Juta – Rp80 Juta</div>
-  <div class="tagline">Ideal untuk UMKM, Usaha Mikro, dan Startup yang butuh website, mobile app, atau sistem operasional sederhana.</div>
-  <div class="section-label">Yang Kamu Dapat</div>
-  <ul class="features">
-    <li>Website &amp; Mobile App Custom</li>
-    <li>UI/UX Modern &amp; Responsif</li>
-    <li>Sistem Scalable &amp; Fleksibel</li>
-    <li>Efisiensi Operasional Naik</li>
-    <li>Dukungan Tim Dedicated</li>
-  </ul>
-  <div class="meta-grid">
-    <div><div class="meta-label">Tim Dedicated</div><div class="meta-value">1 BA + 1 Senior Engineer</div></div>
-    <div><div class="meta-label">Timeline</div><div class="meta-value">1 – 4 Minggu</div></div>
-  </div>
-  <div class="footer">© Venturo Software House Malang</div>
-</div>
-<div class="right-space"></div>
-</div></body></html>"""
-
-_STARTER_ARCTIC_HTML = f"""<!DOCTYPE html>
-<html><head><meta charset="utf-8"><style>{_BASE_CSS}
-.content {{ background: linear-gradient(180deg, #fafafa 0%, #d4e4f7 100%); color: #1a2332; }}
-.brand {{ color: #006D79; }}
-.subbrand {{ color: #4a6fa5; }}
-h1.tier-name {{ color: #4a6fa5; }}
-.budget-box {{ background: linear-gradient(90deg, #4a6fa5, #006D79); color: #ffffff; }}
-.tagline {{ color: #2d3b50; }}
-.section-label {{ color: #006D79; }}
-.features li::before {{ background: #4a6fa5; color: #ffffff; }}
-.features li {{ color: #1a2332; }}
-.meta-grid {{ color: #4a6fa5; border-top-color: #c0c0c0; }}
-.meta-grid .meta-value {{ color: #1a2332; }}
-.footer {{ color: #708090; }}
-</style></head><body><div class="canvas">
-<div class="content">
-  <div class="brand">VENTURO</div>
-  <div class="subbrand">Software House Malang</div>
-  <h1 class="tier-name">PAKET<br>STARTER</h1>
-  <div class="budget-box">Rp20 Juta – Rp80 Juta</div>
-  <div class="tagline">Ideal untuk UMKM, Usaha Mikro, dan Startup yang butuh website, mobile app, atau sistem operasional sederhana.</div>
-  <div class="section-label">Yang Kamu Dapat</div>
-  <ul class="features">
-    <li>Website &amp; Mobile App Custom</li>
-    <li>UI/UX Modern &amp; Responsif</li>
-    <li>Sistem Scalable &amp; Fleksibel</li>
-    <li>Efisiensi Operasional Naik</li>
-    <li>Dukungan Tim Dedicated</li>
-  </ul>
-  <div class="meta-grid">
-    <div><div class="meta-label">Tim Dedicated</div><div class="meta-value">1 BA + 1 Senior Engineer</div></div>
-    <div><div class="meta-label">Timeline</div><div class="meta-value">1 – 4 Minggu</div></div>
-  </div>
-  <div class="footer">© Venturo Software House Malang</div>
-</div>
-<div class="right-space"></div>
-</div></body></html>"""
-
-_GROWTH_TECH_HTML = f"""<!DOCTYPE html>
-<html><head><meta charset="utf-8"><style>{_BASE_CSS}
-.content {{
-  background: linear-gradient(135deg, #ffffff 0%, #f5f9ff 50%, #ffffff 100%);
-  color: #1e1e1e;
-  position: relative;
-}}
-.content::before {{
-  content: "";
-  position: absolute; inset: 0;
-  background-image:
-    linear-gradient(to right, rgba(0, 102, 255, 0.04) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(0, 102, 255, 0.04) 1px, transparent 1px);
-  background-size: 32px 32px;
-  pointer-events: none;
-}}
-.content > * {{ position: relative; }}
-.brand {{
-  color: #0066ff;
-  font-family: 'Boldonse', sans-serif;
-  border-bottom: 3px solid #00ffff;
-  display: inline-block;
-  padding-bottom: 4px;
-}}
-.subbrand {{ color: #4a6fa5; font-family: 'JetBrainsMono', monospace; }}
-h1.tier-name {{ color: #0066ff; font-family: 'Boldonse', sans-serif; }}
-.budget-box {{
-  background: linear-gradient(90deg, #0066ff, #00ffff);
-  color: #ffffff;
-  font-family: 'JetBrainsMono', monospace;
-}}
-.tagline {{ color: #1e1e1e; }}
-.section-label {{ color: #0066ff; letter-spacing: 3px; }}
-.features li::before {{ background: #0066ff; color: #00ffff; }}
-.features li {{ color: #1e1e1e; font-family: 'JetBrainsMono', monospace; }}
-.meta-grid {{ color: #4a6fa5; border-top-color: rgba(0, 102, 255, 0.3); font-family: 'JetBrainsMono', monospace; }}
-.meta-grid .meta-value {{ color: #1e1e1e; }}
-.footer {{ color: #708090; font-family: 'JetBrainsMono', monospace; }}
-</style></head><body><div class="canvas">
-<div class="content">
-  <div class="brand">VENTURO</div>
-  <div class="subbrand">Software House Malang</div>
-  <h1 class="tier-name">PAKET<br>GROWTH</h1>
-  <div class="budget-box">Rp80 Juta – Rp250 Juta</div>
-  <div class="tagline">Untuk perusahaan scaling yang butuh sistem custom: Finance, HRIS, CRM, ERP, Inventory, WMS, dan lainnya.</div>
-  <div class="section-label">Modul Sistem</div>
-  <ul class="features">
-    <li>Finance &amp; Accounting System</li>
-    <li>HRIS &amp; Payroll Management</li>
-    <li>CRM &amp; Sales Management</li>
-    <li>ERP &amp; Inventory System</li>
-    <li>WMS &amp; Logistic Management</li>
-    <li>Dashboard &amp; Reporting Analytics</li>
-  </ul>
-  <div class="meta-grid">
-    <div><div class="meta-label">Tim Dedicated</div><div class="meta-value">BA + Sr. Eng + UI/UX + QA</div></div>
-    <div><div class="meta-label">Timeline</div><div class="meta-value">1 – 4.5 Bulan</div></div>
-  </div>
-  <div class="footer">© Venturo Software House Malang</div>
-</div>
-<div class="right-space"></div>
-</div></body></html>"""
-
-_GROWTH_OCEAN_HTML = f"""<!DOCTYPE html>
-<html><head><meta charset="utf-8"><style>{_BASE_CSS}
-.content {{ background: linear-gradient(180deg, #f1faee 0%, #a8dadc 100%); color: #1a2332; }}
-.brand {{ color: #006D79; }}
-.subbrand {{ color: #2d8b8b; }}
-h1.tier-name {{ color: #1a2332; }}
-.budget-box {{ background: linear-gradient(90deg, #1a2332, #2d8b8b); color: #ffffff; }}
-.tagline {{ color: #1a2332; }}
-.section-label {{ color: #006D79; }}
-.features li::before {{ background: #2d8b8b; color: #ffffff; width: 28px; height: 28px; }}
-.features li {{ color: #1a2332; }}
-.meta-grid {{ color: #2d8b8b; border-top-color: rgba(45, 139, 139, 0.3); }}
-.meta-grid .meta-value {{ color: #1a2332; }}
-.footer {{ color: #4a6fa5; }}
-</style></head><body><div class="canvas">
-<div class="content">
-  <div class="brand">VENTURO</div>
-  <div class="subbrand">Software House Malang</div>
-  <h1 class="tier-name">PAKET<br>GROWTH</h1>
-  <div class="budget-box">Rp80 Juta – Rp250 Juta</div>
-  <div class="tagline">Untuk perusahaan scaling yang butuh sistem custom: Finance, HRIS, CRM, ERP, Inventory, WMS, dan lainnya.</div>
-  <div class="section-label">Modul Sistem</div>
-  <ul class="features">
-    <li>Finance &amp; Accounting System</li>
-    <li>HRIS &amp; Payroll Management</li>
-    <li>CRM &amp; Sales Management</li>
-    <li>ERP &amp; Inventory System</li>
-    <li>WMS &amp; Logistic Management</li>
-    <li>Dashboard &amp; Reporting Analytics</li>
-  </ul>
-  <div class="meta-grid">
-    <div><div class="meta-label">Tim Dedicated</div><div class="meta-value">BA + Sr. Eng + UI/UX + QA</div></div>
-    <div><div class="meta-label">Timeline</div><div class="meta-value">1 – 4.5 Bulan</div></div>
-  </div>
-  <div class="footer">© Venturo Software House Malang</div>
-</div>
-<div class="right-space"></div>
-</div></body></html>"""
-
-_ENTERPRISE_MIDNIGHT_HTML = f"""<!DOCTYPE html>
-<html><head><meta charset="utf-8"><style>{_BASE_CSS}
-.content {{
-  background: linear-gradient(135deg, #2b1e3e 0%, #4a4e8f 100%);
-  color: #e6e6fa;
-  position: relative;
-}}
-.content::before {{
-  content: "";
-  position: absolute; inset: 0;
-  background:
-    radial-gradient(circle at 25% 20%, rgba(164, 144, 194, 0.25) 0%, transparent 45%),
-    radial-gradient(circle at 75% 80%, rgba(0, 109, 121, 0.3) 0%, transparent 45%);
-  pointer-events: none;
-}}
-.content::after {{
-  content: "";
-  position: absolute; inset: 0;
-  background-image: radial-gradient(#e6e6fa 1px, transparent 1px);
-  background-size: 80px 80px;
-  opacity: 0.15;
-  pointer-events: none;
-}}
-.content > * {{ position: relative; }}
-.brand {{
-  color: #006D79;
-  font-family: 'BricolageGrotesque', sans-serif;
-  text-shadow: 0 0 16px rgba(0, 109, 121, 0.7);
-}}
-.subbrand {{ color: #a490c2; }}
-h1.tier-name {{
-  color: #e6e6fa;
-  font-family: 'BricolageGrotesque', sans-serif;
-  text-shadow: 0 0 30px rgba(74, 78, 143, 0.6);
-}}
-.budget-box {{
-  background: #006D79;
-  color: #ffffff;
-  box-shadow: 0 0 28px rgba(0, 109, 121, 0.6);
-  border: 1px solid #a490c2;
-}}
-.tagline {{ color: #d4cce6; }}
-.section-label {{ color: #a490c2; letter-spacing: 3px; }}
-.features li::before {{
-  background: transparent;
-  color: #a490c2;
-  border: 2px solid #a490c2;
-}}
-.features li {{ color: #e6e6fa; }}
-.meta-grid {{
-  color: #a490c2;
-  border-top-color: rgba(164, 144, 194, 0.4);
-}}
-.meta-grid .meta-value {{ color: #e6e6fa; }}
-.footer {{ color: #708090; }}
-</style></head><body><div class="canvas">
-<div class="content">
-  <div class="brand">VENTURO</div>
-  <div class="subbrand">Software House Malang</div>
-  <h1 class="tier-name">PAKET<br>ENTERPRISE</h1>
-  <div class="budget-box">Mulai Rp250 Juta</div>
-  <div class="tagline">Solusi enterprise-grade untuk AI, Big Data, cybersecurity, dan transformasi digital menyeluruh.</div>
-  <div class="section-label">Solusi Enterprise</div>
-  <ul class="features">
-    <li>AI &amp; Big Data Integration</li>
-    <li>Cybersecurity &amp; Pen Test</li>
-    <li>Cross-System Integration</li>
-    <li>Digital Transformation</li>
-    <li>System Architecture Complex</li>
-    <li>Holographic UI &amp; Real-time Dashboard</li>
-  </ul>
-  <div class="meta-grid">
-    <div><div class="meta-label">Tim Dedicated</div><div class="meta-value">6 Orang (BA, Sr/Mid Eng, UI/UX, QA, Pen Test)</div></div>
-    <div><div class="meta-label">Timeline</div><div class="meta-value">2 – 8 Bulan</div></div>
-  </div>
-  <div class="footer">© Venturo Software House Malang</div>
-</div>
-<div class="right-space"></div>
-</div></body></html>"""
-
-_ENTERPRISE_TECH_HTML = f"""<!DOCTYPE html>
-<html><head><meta charset="utf-8"><style>{_BASE_CSS}
-.content {{
-  background: linear-gradient(135deg, #0a0a0a 0%, #1e1e1e 100%);
-  color: #ffffff;
-  position: relative;
-}}
-.content::before {{
-  content: "";
-  position: absolute; inset: 0;
-  background:
-    linear-gradient(to right, rgba(0, 102, 255, 0.04) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(0, 102, 255, 0.04) 1px, transparent 1px),
-    linear-gradient(to right, rgba(0, 255, 255, 0.03) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(0, 255, 255, 0.03) 1px, transparent 1px);
-  background-size: 80px 80px, 80px 80px, 16px 16px, 16px 16px;
-  pointer-events: none;
-}}
-.content > * {{ position: relative; }}
-.brand {{
-  color: #00ffff;
-  font-family: 'Boldonse', sans-serif;
-  text-shadow: 0 0 20px rgba(0, 255, 255, 0.7), 0 0 40px rgba(0, 102, 255, 0.4);
-  border-bottom: 3px solid #0066ff;
-  display: inline-block;
-  padding-bottom: 4px;
-}}
-.subbrand {{ color: #00ffff; font-family: 'JetBrainsMono', monospace; opacity: 0.7; }}
-h1.tier-name {{ color: #ffffff; font-family: 'Boldonse', sans-serif; text-shadow: 0 0 30px rgba(0, 102, 255, 0.5); }}
-.budget-box {{
-  background: #0066ff;
-  color: #00ffff;
-  font-family: 'JetBrainsMono', monospace;
-  box-shadow: 0 0 30px rgba(0, 102, 255, 0.6);
-  border: 1px solid #00ffff;
-}}
-.tagline {{ color: #e0e0e0; font-family: 'JetBrainsMono', monospace; }}
-.section-label {{ color: #00ffff; letter-spacing: 3px; font-family: 'JetBrainsMono', monospace; }}
-.features li::before {{
-  background: transparent;
-  color: #00ffff;
-  border: 2px solid #00ffff;
-  box-shadow: 0 0 10px rgba(0, 255, 255, 0.4);
-}}
-.features li {{ color: #ffffff; }}
-.meta-grid {{ color: #00ffff; border-top-color: rgba(0, 255, 255, 0.3); font-family: 'JetBrainsMono', monospace; }}
-.meta-grid .meta-value {{ color: #ffffff; }}
-.footer {{ color: #00ffff; opacity: 0.6; font-family: 'JetBrainsMono', monospace; }}
-</style></head><body><div class="canvas">
-<div class="content">
-  <div class="brand">VENTURO</div>
-  <div class="subbrand">Software House Malang</div>
-  <h1 class="tier-name">PAKET<br>ENTERPRISE</h1>
-  <div class="budget-box">Mulai Rp250 Juta</div>
-  <div class="tagline">Solusi enterprise-grade untuk AI, Big Data, cybersecurity, dan transformasi digital menyeluruh.</div>
-  <div class="section-label">Solusi Enterprise</div>
-  <ul class="features">
-    <li>AI &amp; Big Data Integration</li>
-    <li>Cybersecurity &amp; Pen Test</li>
-    <li>Cross-System Integration</li>
-    <li>Digital Transformation</li>
-    <li>System Architecture Complex</li>
-    <li>Holographic UI &amp; Real-time Dashboard</li>
-  </ul>
-  <div class="meta-grid">
-    <div><div class="meta-label">Tim Dedicated</div><div class="meta-value">6 Orang (BA, Sr/Mid Eng, UI/UX, QA, Pen Test)</div></div>
-    <div><div class="meta-label">Timeline</div><div class="meta-value">2 – 8 Bulan</div></div>
-  </div>
-  <div class="footer">© Venturo Software House Malang</div>
-</div>
-<div class="right-space"></div>
-</div></body></html>"""
-
-
-_THEME_VARIANTS: dict[str, dict[str, str]] = {
-    "modern-minimalist": {
-        "starter": _STARTER_MINIMALIST_HTML,
-    },
-    "arctic-frost": {
-        "starter": _STARTER_ARCTIC_HTML,
-    },
-    "tech-innovation": {
-        "growth": _GROWTH_TECH_HTML,
-        "enterprise": _ENTERPRISE_TECH_HTML,
-    },
-    "ocean-depths": {
-        "growth": _GROWTH_OCEAN_HTML,
-    },
-    "midnight-galaxy": {
-        "enterprise": _ENTERPRISE_MIDNIGHT_HTML,
-    },
-}
 
 
 _STARTER_HTML = f"""<!DOCTYPE html>
 <html><head><meta charset="utf-8"><style>{_BASE_CSS}
-.content {{ background: linear-gradient(180deg, #FFFFFF 0%, #F6F8F8 100%); color: #292929; }}
+.poster {{
+  background: #FFFFFF;
+  color: #1F2937;
+  position: relative;
+}}
+.poster::before {{
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(#006D79 1px, transparent 1px);
+  background-size: 28px 28px;
+  opacity: 0.06;
+  pointer-events: none;
+}}
+.poster > * {{ position: relative; }}
 .brand {{ color: #006D79; }}
-.subbrand {{ color: #4B5563; }}
-h1.tier-name {{ color: #006D79; }}
+.tier-name {{ color: #006D79; }}
 .budget-box {{ background: #006D79; color: #FFFFFF; }}
-.tagline {{ color: #4B5563; }}
+.tagline {{ color: #374151; }}
 .section-label {{ color: #006D79; }}
-.features li::before {{ background: #009BAD; color: #FFFFFF; }}
-.features li {{ color: #292929; }}
-.meta-grid {{ color: #4B5563; border-top-color: #E5E7EB; }}
-.footer {{ color: #4B5563; }}
-</style></head><body><div class="canvas">
-<div class="content">
-  <div class="brand">VENTURO</div>
-  <div class="subbrand">Software House Malang</div>
-  <h1 class="tier-name">PAKET<br>STARTER</h1>
+.features {{ color: #1F2937; }}
+.features li {{ font-weight: 600; }}
+.features li::before {{ background: #006D79; color: #FFFFFF; }}
+.meta-strip {{ color: #006D79; }}
+.highlight-card {{ background: rgba(0,109,121,0.04); border-left: 3px solid #006D79; }}
+.highlight-card .detail-label {{ color: #006D79; }}
+.highlight-card .detail-value {{ color: #1F2937; }}
+.footer-brand {{ color: #006D79; }}
+</style></head><body><div class="poster">
+  <div class="brand">{VENTURO_LOGO_SVG}</div>
+  <h1 class="tier-name">PAKET STARTER</h1>
   <div class="budget-box">Rp20 Juta – Rp80 Juta</div>
   <div class="tagline">Ideal untuk UMKM, Usaha Mikro, dan Startup yang butuh website, mobile app, atau sistem operasional sederhana.</div>
+  <div class="content-top">
   <div class="section-label">Yang Kamu Dapat</div>
   <ul class="features">
     <li>Website &amp; Mobile App Custom</li>
@@ -661,35 +322,69 @@ h1.tier-name {{ color: #006D79; }}
     <li>Efisiensi Operasional Naik</li>
     <li>Dukungan Tim Dedicated</li>
   </ul>
-  <div class="meta-grid">
-    <div><div class="meta-label">Tim Dedicated</div><div class="meta-value">1 BA + 1 Senior Engineer</div></div>
-    <div><div class="meta-label">Timeline</div><div class="meta-value">1 – 4 Minggu</div></div>
   </div>
-  <div class="footer">© Venturo Software House Malang</div>
-</div>
-<div class="right-space"></div>
+  <div class="content-body">
+    <div class="content-body-left">
+      <div class="detail-section">
+        <div class="detail-label">Tim Dedicated</div>
+        <div class="detail-value">1 BA + 1 Senior Engineer</div>
+      </div>
+      <div class="detail-section">
+        <div class="detail-label">Timeline</div>
+        <div class="detail-value">1 – 4 Minggu</div>
+      </div>
+    </div>
+    <div class="content-body-right">
+      <div class="highlight-card">
+        <div class="detail-label">COCOK UNTUK</div>
+        <div class="detail-value">UMKM, Usaha Mikro, Startup</div>
+      </div>
+      <div class="highlight-card">
+        <div class="detail-label">FASE BISNIS</div>
+        <div class="detail-value">Validasi Ide &amp; Early Traction</div>
+      </div>
+    </div>
+  </div>
+  <div class="footer-brand">© venturo.id</div>
 </div></body></html>"""
+
 
 _GROWTH_HTML = f"""<!DOCTYPE html>
 <html><head><meta charset="utf-8"><style>{_BASE_CSS}
-.content {{ background: linear-gradient(135deg, #FFFFFF 0%, #E8F4F5 50%, #F6F8F8 100%); color: #292929; }}
+.poster {{
+  background: #FFFFFF;
+  color: #1F2937;
+  position: relative;
+}}
+.poster::before {{
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(#009BAD 1px, transparent 1px);
+  background-size: 24px 24px;
+  opacity: 0.05;
+  pointer-events: none;
+}}
+.poster > * {{ position: relative; }}
 .brand {{ color: #006D79; }}
-.subbrand {{ color: #4B5563; }}
-h1.tier-name {{ color: #006D79; }}
-.budget-box {{ background: linear-gradient(90deg, #006D79, #009BAD); color: #FFFFFF; }}
+.tier-name {{ color: #006D79; }}
+.budget-box {{ background: linear-gradient(135deg, #006D79, #009BAD); color: #FFFFFF; }}
 .tagline {{ color: #374151; }}
 .section-label {{ color: #006D79; }}
+.features {{ color: #1F2937; }}
+.features li {{ font-weight: 600; }}
 .features li::before {{ background: #006D79; color: #FFFFFF; }}
-.features li {{ color: #292929; }}
-.meta-grid {{ color: #4B5563; border-top-color: rgba(0,109,121,0.2); }}
-.footer {{ color: #4B5563; }}
-</style></head><body><div class="canvas">
-<div class="content">
-  <div class="brand">VENTURO</div>
-  <div class="subbrand">Software House Malang</div>
-  <h1 class="tier-name">PAKET<br>GROWTH</h1>
+.meta-strip {{ color: #006D79; }}
+.highlight-card {{ background: rgba(0,155,173,0.04); border-left: 3px solid #009BAD; }}
+.highlight-card .detail-label {{ color: #009BAD; }}
+.highlight-card .detail-value {{ color: #1F2937; }}
+.footer-brand {{ color: #006D79; }}
+</style></head><body><div class="poster">
+  <div class="brand">{VENTURO_LOGO_SVG}</div>
+  <h1 class="tier-name">PAKET GROWTH</h1>
   <div class="budget-box">Rp80 Juta – Rp250 Juta</div>
   <div class="tagline">Untuk perusahaan scaling yang butuh sistem custom: Finance, HRIS, CRM, ERP, Inventory, WMS, dan lainnya.</div>
+  <div class="content-top">
   <div class="section-label">Modul Sistem</div>
   <ul class="features">
     <li>Finance &amp; Accounting System</li>
@@ -699,65 +394,83 @@ h1.tier-name {{ color: #006D79; }}
     <li>WMS &amp; Logistic Management</li>
     <li>Dashboard &amp; Reporting Analytics</li>
   </ul>
-  <div class="meta-grid">
-    <div><div class="meta-label">Tim Dedicated</div><div class="meta-value">BA + Sr. Eng + UI/UX + QA</div></div>
-    <div><div class="meta-label">Timeline</div><div class="meta-value">1 – 4.5 Bulan</div></div>
   </div>
-  <div class="footer">© Venturo Software House Malang</div>
-</div>
-<div class="right-space"></div>
+  <div class="content-body">
+    <div class="content-body-left">
+      <div class="detail-section">
+        <div class="detail-label">Tim Dedicated</div>
+        <div class="detail-value">BA + Sr. Eng + UI/UX + QA</div>
+      </div>
+      <div class="detail-section">
+        <div class="detail-label">Timeline</div>
+        <div class="detail-value">1 – 4.5 Bulan</div>
+      </div>
+    </div>
+    <div class="content-body-right">
+      <div class="highlight-card">
+        <div class="detail-label">COCOK UNTUK</div>
+        <div class="detail-value">Perusahaan Scaling &amp; Mid-Market</div>
+      </div>
+      <div class="highlight-card">
+        <div class="detail-label">FASE BISNIS</div>
+        <div class="detail-value">Ekspansi Sistem &amp; Efisiensi</div>
+      </div>
+    </div>
+  </div>
+  <div class="footer-brand">© venturo.id</div>
 </div></body></html>"""
+
 
 _ENTERPRISE_HTML = f"""<!DOCTYPE html>
 <html><head><meta charset="utf-8"><style>{_BASE_CSS}
-.content {{
-  background: linear-gradient(135deg, #0A1B1F 0%, #202020 50%, #0A1B1F 100%);
+.poster {{
+  background: linear-gradient(160deg, #0A1B1F 0%, #0D2229 40%, #112D35 100%);
   color: #FFFFFF;
   position: relative;
 }}
-.content::before {{
+.poster::before {{
   content: "";
   position: absolute;
   inset: 0;
-  background:
-    radial-gradient(circle at 20% 30%, rgba(0,155,173,0.15) 0%, transparent 40%),
-    radial-gradient(circle at 80% 70%, rgba(0,109,121,0.2) 0%, transparent 40%);
+  background-image: radial-gradient(#009BAD 1px, transparent 1px);
+  background-size: 32px 32px;
+  opacity: 0.08;
   pointer-events: none;
 }}
-.content > * {{ position: relative; }}
-.brand {{ color: #009BAD; text-shadow: 0 0 12px rgba(0,155,173,0.5); }}
-.subbrand {{ color: #9CA3AF; }}
-h1.tier-name {{
-  color: #FFFFFF;
-  text-shadow: 0 0 30px rgba(0,155,173,0.4);
+.poster::after {{
+  content: "";
+  position: absolute;
+  top: -200px;
+  right: -200px;
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, rgba(0,155,173,0.12) 0%, transparent 70%);
+  pointer-events: none;
 }}
+.poster > * {{ position: relative; }}
+.brand {{ color: #009BAD; }}
+.tier-name {{ color: #FFFFFF; }}
 .budget-box {{
-  background: #006D79;
+  background: rgba(0,109,121,0.5);
   color: #FFFFFF;
-  box-shadow: 0 0 24px rgba(0,155,173,0.4);
-  border: 1px solid #009BAD;
+  border: 1.5px solid rgba(0,155,173,0.5);
 }}
-.tagline {{ color: #D1D5DB; }}
+.tagline {{ color: #C7D5DA; }}
 .section-label {{ color: #009BAD; }}
-.features li::before {{
-  background: #009BAD;
-  color: #FFFFFF;
-  box-shadow: 0 0 12px rgba(0,155,173,0.6);
-}}
-.features li {{ color: #E5E7EB; }}
-.meta-grid {{
-  color: #9CA3AF;
-  border-top-color: rgba(0,155,173,0.3);
-}}
-.meta-grid .meta-value {{ color: #FFFFFF; }}
-.footer {{ color: #6B7280; }}
-</style></head><body><div class="canvas">
-<div class="content">
-  <div class="brand">VENTURO</div>
-  <div class="subbrand">Software House Malang</div>
-  <h1 class="tier-name">PAKET<br>ENTERPRISE</h1>
+.features {{ color: #E5E7EB; }}
+.features li {{ font-weight: 600; }}
+.features li::before {{ background: #009BAD; color: #0A1B1F; }}
+.meta-strip {{ color: #009BAD; }}
+.highlight-card {{ background: rgba(0,155,173,0.08); border-left: 3px solid #009BAD; }}
+.highlight-card .detail-label {{ color: #009BAD; }}
+.highlight-card .detail-value {{ color: #FFFFFF; }}
+.footer-brand {{ color: #009BAD; }}
+</style></head><body><div class="poster">
+  <div class="brand">{VENTURO_LOGO_SVG}</div>
+  <h1 class="tier-name">PAKET ENTERPRISE</h1>
   <div class="budget-box">Mulai Rp250 Juta</div>
   <div class="tagline">Solusi enterprise-grade untuk AI, Big Data, cybersecurity, dan transformasi digital menyeluruh.</div>
+  <div class="content-top">
   <div class="section-label">Solusi Enterprise</div>
   <ul class="features">
     <li>AI &amp; Big Data Integration</li>
@@ -767,15 +480,36 @@ h1.tier-name {{
     <li>System Architecture Complex</li>
     <li>Holographic UI &amp; Real-time Dashboard</li>
   </ul>
-  <div class="meta-grid">
-    <div><div class="meta-label">Tim Dedicated</div><div class="meta-value">6 Orang (BA, Sr/Mid Eng, UI/UX, QA, Pen Test)</div></div>
-    <div><div class="meta-label">Timeline</div><div class="meta-value">2 – 8 Bulan</div></div>
   </div>
-  <div class="footer">© Venturo Software House Malang</div>
-</div>
-<div class="right-space"></div>
+  <div class="content-body">
+    <div class="content-body-left">
+      <div class="detail-section">
+        <div class="detail-label">Tim Dedicated</div>
+        <div class="detail-value">6 Orang (BA, Sr/Mid Eng, UI/UX, QA, Pen Test)</div>
+      </div>
+      <div class="detail-section">
+        <div class="detail-label">Timeline</div>
+        <div class="detail-value">2 – 8 Bulan</div>
+      </div>
+    </div>
+    <div class="content-body-right">
+      <div class="highlight-card">
+        <div class="detail-label">COCOK UNTUK</div>
+        <div class="detail-value">Enterprise &amp; Large-Scale Org</div>
+      </div>
+      <div class="highlight-card">
+        <div class="detail-label">FASE BISNIS</div>
+        <div class="detail-value">Transformasi Digital Menyeluruh</div>
+      </div>
+    </div>
+  </div>
+  <div class="footer-brand">© venturo.id</div>
 </div></body></html>"""
 
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Theme variants (square 1024×1024)
+# ─────────────────────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
     mcp.run(transport="stdio")
