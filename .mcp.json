@@ -2,14 +2,7 @@
   "mcpServers": {
     "venturo-poster": {
       "command": "python3",
-      "args": ["venturo-poster/mcp-playwright/server.py"],
-      "env": {
-        "CLOUDFLARE_ACCOUNT_ID": "",
-        "CLOUDFLARE_AUTH_TOKEN": "",
-        "CLOUDFLARE_MODEL": "google/nano-banana-2-lite",
-        "CANVAS_WIDTH": "1400",
-        "CANVAS_HEIGHT": "1024"
-      }
+      "args": ["venturo-poster/mcp-playwright/server.py"]
     }
   }
 }
