@@ -10,6 +10,30 @@ Generate **WhatsApp Business catalog images** for Venturo software packages (Sta
 **Engine:** HTML/CSS templates rendered by Playwright → PNG 1400x1024
 **Overlay:** Pillow adds Venturo logo on right-side white space automatically
 
+## Integrated Design Skills
+
+### canvas-design Principles
+- **Visual-first communication**: Every design is 90% visual, 10% essential text. Text should be sparse and integrated as a visual element, never lengthy paragraphs.
+- **Spatial expression**: Ideas communicate through space, form, color, composition — not explanation. Use generous breathing room.
+- **Composition & balance**: Massive color blocks, sculptural typography, dramatic negative space. Everything placed with precision.
+- **Expert craftsmanship**: Composition must look meticulously crafted — spacing, alignment, color choices, and typography are pixel-perfect. Nothing overlaps. Every detail refined.
+- **Typography as art**: Bold condensed sans-serif headings can be treated as visual gestures — large single words, tiny labels. Fonts from `assets/canvas-fonts/` can be used when Playwright supports local fonts.
+
+### theme-factory Integration
+Use themes from `themes/` directory to generate variant designs per tier. Themes define cohesive palettes + font pairings that maintain consistency across all catalog pieces.
+
+**Pre-matched themes per tier:**
+| Tier | Recommended Theme |
+|------|-------------------|
+| Starter | modern-minimalist, arctic-frost |
+| Growth | tech-innovation, ocean-depths |
+| Enterprise | midnight-galaxy, tech-innovation |
+
+When user wants "alternative designs" or "more options", swap to different themes or create custom ones.
+
+### brand-guidelines
+Apply consistent brand colors, typography hierarchy, and spacing rules. Primary teal `#006D79` always dominates. Brand feels professional and trustworthy.
+
 ## Design System (Venturo Brand)
 
 | Element | Spec |
@@ -57,16 +81,27 @@ Ask 3-5 questions in **Bahasa Indonesia**:
 2. **Overlay Content** — Mau tambahin QR code atau teks custom di space kanan?
 3. **Design Preferences** — Ada preferensi tambahan? (opsional)
 
-### Phase 2: Show Preview
+### Phase 2: Show Preview + Theme Options
 
-Display the tier summary + what the design will look like:
-> "Design untuk **PAKET STARTER** — tema light teal, minimalis, cocok untuk UMKM. Output 1400x1024 PNG, logo Venturo otomatis di kanan bawah. Lanjut?"
+Display the tier summary + what the design will look like. Offer theme alternatives:
+> "Design untuk **PAKET STARTER** — tema light teal, minimalis, cocok untuk UMKM.
+> Alternatif tema tersedia: Modern Minimalist (grayscale), Arctic Frost (biru dingin).
+> Output 1400x1024 PNG, logo Venturo otomatis di kanan bawah. Lanjut?"
+
+To generate a different theme variant, pass `theme` parameter:
+```
+generate_catalog(tier="starter", theme="modern-minimalist")
+```
+
+If no theme specified, use default tier design. If theme name doesn't match built-in, create a custom one on-the-fly using theme-factory principles.
 
 ### Phase 3: Generate
 
-Call MCP tool:
+Call MCP tool with optional theme:
 ```
 generate_catalog(tier="starter")
+# or with a theme variant
+generate_catalog(tier="growth", theme="tech-innovation")
 ```
 
 ### Phase 4: Deliver
@@ -82,6 +117,15 @@ generate_catalog(tier="starter")
 - **Bahasa Indonesia** untuk semua teks di desain dan komunikasi.
 - Logo overlay otomatis dari `assets/image_1c155d.png` posisi kanan bawah.
 - Jika user minta QR code atau teks manual di space kanan, bilang user bisa tambah sendiri setelah gambar jadi.
+
+## Theme Files
+
+| Path | Purpose |
+|------|---------|
+| `themes/starter/*.md` | Starter tier theme variants (arctic-frost, modern-minimalist) |
+| `themes/growth/*.md` | Growth tier theme variants (tech-innovation, ocean-depths) |
+| `themes/enterprise/*.md` | Enterprise tier theme variants (midnight-galaxy, tech-innovation) |
+| `themes/custom/*.md` | Custom themes generated on-the-fly |
 
 ## File Reference
 

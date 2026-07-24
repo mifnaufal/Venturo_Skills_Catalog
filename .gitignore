@@ -21,3 +21,9 @@ Thumbs.db
 
 # Package locks (safety)
 node_modules/
+
+# Wrangler cache (legacy Cloudflare era)
+.wrangler/
+
+# Canvas fonts (kept in repo — comment out to ignore)
+# venturo-poster/assets/canvas-fonts/
