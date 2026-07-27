@@ -1,6 +1,0 @@
-{
-  "$schema": "https://antigravity.google/schemas/v1/plugin.json",
-  "name": "venturo-poster",
-  "description": "Generate WhatsApp Business catalog images for Venturo software packages (Starter/Growth/Enterprise). HTML/CSS designs rendered to PNG via Playwright with Pillow logo overlay. Output: 1400x1024. Triggers: catalog wa, katalog whatsapp, buat katalog, catalog venturo, poster venturo.",
-  "keywords": ["venturo", "catalog", "katalog", "whatsapp", "wa", "poster", "html", "css", "playwright"]
-}
