@@ -200,6 +200,10 @@ terminal(command="claude -p 'Generate poster starter HD: 2048x2048 container + D
 - WAJIB ada CTA button "Konsultasi Gratis" di kanan-bawah, pake accent color `#10B981`
 - Gunakan Z-Pattern layout: Logo(ki-atas) → Tier name(ka-atas) → Content(ki-bawah) → CTA(ka-bawah)
 - Palet max 4 warna: background + `#006D79` + `#009BAD` + CTA accent
+- **FULL CANVAS RULE:** 2048×2048 WAJIB 100% full, zero empty gaps
+- **Gap antar section: 24–32px** (jangan 48-64, terlalu longgar)
+- **Minimal 8 checkmark items** — kalo data cuma 4-5, tambah dari default set
+- **Kalo content gak nyampe 2048px, pakai protocol:** tambah checkmark → tambah SVG deco → tambah extra section
 
 ---
 

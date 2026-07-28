@@ -87,7 +87,7 @@ Visually rich dengan SVG shapes, pattern, gradient — tapi tetap clean dengan h
 | Checkmark circle | 28×28px | **56×56px** |
 | Padding container | 32px | **64px** |
 | Dot grid spacing | 32px | **64px** |
-| Section gap | 20px | **40px** |
+| Section gap | 16px | **32px** |
 
 ### Canvas Setup
 
@@ -234,30 +234,76 @@ function draw() {
 
 **Catatan:** Canvas p5.js harus di z-index 0 (di belakang konten). Konten HTML tetaplah di atas via z-index lebih tinggi.
 
-### Layout Structure (6 zone — semua nilai double)
+## CRITICAL: FULL CANVAS RULE — NO EMPTY SPACE
 
-1. **Header (~240px from top)**
-   - **MANDATORY: Use the Venturo logo image from `image.png`.** Do NOT type out "VENTURO" as plain text.
-   - Inject logo as base64 data URI `<img>`, rendered at ~72–96px height, top-left (~x=64, ~y=48)
-   - "PAKET [TIER_NAME]" in **224px** bold typography beneath
+The 2048×2048 canvas MUST be 100% filled. **Zero empty gaps.** If content sections don't reach the bottom, add visual density elements to fill remaining space. A poster with empty gaps = failed poster.
 
-2. **Budget & Tagline (~320px below header)**
-   - Pill-shaped color box (**56px** font, fully rounded corners)
-   - **40px** tagline paragraph underneath
+### Anti-Gap System
 
-3. **Content Sections (~800px middle area)**
-   - Section labels: uppercase, **24px**, letter-spacing 8px
-   - Feature lists with **56×56px** checkmark circles, **36px** text
-   - Include all items for density
+| Problem | Solution |
+|---------|----------|
+| Fitur cuma 3-4 item | Tambah item dari default set sampai minimal 8 checkmark (acak urutan, jangan duplikat) |
+| Timeline pendek | Full-width progress bar 2048px, breakdown tiap fase dengan box besar |
+| Team cuma 2 orang | Kartu team full-width dengan icon + role + deskripsi detail |
+| Masih ada space kosong | Tambah SVG decorative cluster (lingkaran, garis, dot) di area kosong |
+| Bener2 mentok | Tambah "Mengapa Memilih Venturo?" section dengan 3-4 bullet point ekstra |
 
-4. **Dedicated Team & Timeline (~400px)**
-   - Team list + 3-phase timeline with bold duration values
+### Layout Structure (Flexible Height — semua nilai double)
 
-5. **Bottom Grid (~200px)**
-   - Two-column card layout with border tint
+Pakai **flexbox column** dengan `justify-content: space-between` biar konten terdistribusi merata dari atas ke bawah. Jangan pake fixed-height zones yang rigid.
 
-6. **Footer**
-   - "© venturo.id" in **24px** muted text
+```
+┌──────────────┬──────────────┐
+│   LOGO       │  TIER NAME   │  ← Z-Pattern 1
+│   (72-96px)  │  224px bold  │
+├──────────────┴──────────────┤
+│   BUDGET PILL + TAGLINE     │  ← Full-width
+│   56px pill, 40px tagline   │
+├─────────────────────────────┤
+│   SECTION: FEATURES         │  ← Full-width
+│   8-12 checkmark items      │     item per baris
+│   36px text + 56px circle   │
+├─────────────────────────────┤
+│   TIMELINE (3-phase)        │  ← Full-width
+│   Progress bar 2048px       │     fase box besar
+├─────────────────────────────┤
+│   TEAM CARDS +              │  ← 2 column
+│   BOTTOM GRID               │     or full-width
+├──────────────┬──────────────┤
+│   EXTRA       │  CTA BUTTON │  ← Z-Pattern 4
+│   DECORATION  │  #10B981    │
+└──────────────┴──────────────┘
+│   FOOTER © venturo.id       │
+└─────────────────────────────┘
+```
+
+1. **Header row** — Logo (kiri, 72-96px) + Tier name "PAKET [TIER]" (kanan, 224px)
+   - **WAJIB: pakai Venturo logo dari `image.png`.** Jangan tulis "VENTURO" plain text.
+   - Gap antar logo & tier: auto (flexbox justify-between)
+
+2. **Budget & Tagline** — Full-width row
+   - Pill budget **56px**, rounded penuh
+   - Tagline **40px** di bawah pill
+
+3. **Features / Checkmarks** — Full-width, 1 item per baris
+   - Label uppercase **24px**, letter-spacing 8px
+   - Tiap item: **56×56px** checkmark + teks **36px**
+   - MINIMAL 8 item. Kalau data cuma 4-5, tambah dari set default (Masalah/Solusi/Hasil)
+
+4. **Timeline 3-Phase** — Full-width progress bar
+   - 3 fase horizontal, box masing-masing diberi background ringan
+   - Duration bold (**40px**), deskripsi (**28px**)
+   - Panah/connector antar fase
+
+5. **Team + Bottom Content** — 2-column atau full-width
+   - Nama role (**32px**) + jumlah orang + ikon
+   - Grid cards untuk bottom section
+
+6. **CTA Row** — Full-width baris terakhir sebelum footer
+   - CTA button "Konsultasi Gratis" di kanan
+   - Bisa ada dekorasi SVG di kiri kalau ada space
+
+7. **Footer** — "© venturo.id" **24px**, center atau kanan
 
 ### Background Texture (the "rame" factor) — nilai double
 
@@ -269,6 +315,7 @@ function draw() {
 
 ### Visual Density Checklist
 
+- [ ] Canvas **2048×2048 100% terisi** — ga ada celah kosong di manapun
 - [ ] Ada illustrasi SVG ATAU p5.js (bukan cuma CSS doang)
 - [ ] Ukuran container **2048×2048** (bukan 1024)
 - [ ] Semua ukuran font/padding/spacing sudah di-double
@@ -276,9 +323,8 @@ function draw() {
 - [ ] **CTA button ada** — "Konsultasi Gratis" / "Hubungi Kami", accent color (`#10B981` atau `#F59E0B`)
 - [ ] **Z-Pattern layout** — Logo ki-atas → Tier ka-atas → Content ki-bawah → CTA ka-bawah
 - [ ] Margin luar container: **64px** kiri & kanan (konsisten)
-- [ ] Gap antar section: **48–64px**
-- [ ] No more than 160px empty vertical space between sections
-- [ ] At least 8–12 checkmark icons per poster
+- [ ] Gap antar section: **24–32px** (ketat biar rapet, bukan 48-64)
+- [ ] **Minimal 8 checkmark items** — tambah dari default set kalo data sedikit
 - [ ] Dot grid or texture covers the entire canvas background
 - [ ] **224px** tier name anchors the composition
 - [ ] Budget pill is prominent and colorful
@@ -452,11 +498,14 @@ Default content blocks:
 - [ ] No content sections accidentally omitted
 
 ### Layout & Design Principles
+- [ ] **Canvas 2048×2048 100% FULL** — zero empty gaps
+- [ ] Kalau content kurang, **wajib tambah filler** (SVG deco / extra checkmark items / extra section)
 - [ ] **Tier name 224px = satu-satunya focal point** — tidak ada elemen lain yang compete
-- [ ] **CTA button "Konsultasi Gratis" / "Hubungi Kami" ada** di kanan-bawah
+- [ ] **CTA button "Konsultasi Gratis" atau "Hubungi Kami" ada** di kanan-bawah
 - [ ] **CTA pake accent color** (`#10B981` / `#F59E0B`) — bukan teal
 - [ ] **Z-Pattern layout** diikuti: Logo → Tier name → Content → CTA
-- [ ] Margin luar **64px**, gap antar section **48–64px** konsisten
+- [ ] Margin luar **64px**, gap antar section **24–32px** (rapet, jangan longgar)
+- [ ] **Minimal 8 checkmark items** per poster
 - [ ] Warna max 4: background, primary, secondary, CTA accent
 
 ### Visual Completeness
@@ -518,4 +567,6 @@ If the user supplies their own text (custom problems, solutions, taglines, budge
 - **Do NOT** mix tier content in one poster
 - **Do NOT** lupa CTA button — setiap poster WAJIB punya "Konsultasi Gratis" atau "Hubungi Kami"
 - **Do NOT** buat elemen lain compete dengan tier name 224px — illustrasi harus di background
-- **Do NOT** lupa white space — margin luar **64px**, gap antar section **48–64px**
+- **Do NOT** lupa white space — margin luar **64px**, gap antar section **24–32px**
+- **Do NOT** leave EMPTY GAPS — canvas 2048×2048 WAJIB 100% full, tambah filler kalo perlu
+- **Do NOT** kasih checkmark cuma 3-4 — minimal 8, tambah dari default set kalo perlu

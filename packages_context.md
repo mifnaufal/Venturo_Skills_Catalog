@@ -75,14 +75,17 @@ Use this reference to understand tier content and design specs. All posters are 
 Every catalog follows the same visual language, matching venturo.id branding. **Semua ukuran di-double untuk HD (2048×2048 container).**
 
 ### Layout Structure
-- **Canvas:** 2048×2048px square (bukan 1024)
+- **Canvas:** 2048×2048px square (bukan 1024) — **WAJIB 100% FULL, NO EMPTY GAPS**
 - **Layout Pattern:** Z-Pattern — Logo (kiri-atas) → Tier name (kanan-atas) → Content (kiri-bawah) → CTA (kanan-bawah)
 - **Focal Point:** Tier **224px** adalah raja. Ilustrasi SVG/p5.js di z-index 0, opacity max 0.15 — jangan compete dengan tier name.
 - **Header:** Venturo logo small (72–96px) + "PAKET [TIER]" in massive bold typography (**224px**, weight 900, tracking -8px)
 - **Budget Box:** Solid color pill with price range (**56px**)
 - **Tagline:** **40px** description paragraph under budget
 - **Section Label:** Uppercase, **24px**, letter-spacing 8px
-- **Feature List:** Full-width checkmarks — solid teal circle **56×56px** with white ✓
+- **Feature List:** Full-width checkmarks — solid teal circle **56×56px** with white ✓. **MINIMAL 8 item.**
+- **Timeline:** Full-width 3-phase dengan progress bar, box per fase, arrow connector
+- **Team:** Kartu per role dengan icon + deskripsi
+- **Filler Rule:** Kalo content gak nyampe 2048px, **WAJIB tambah filler** — SVG decorative cluster / extra checkmark items dari default set / extra section "Mengapa Memilih Venturo?"
 - **CTA Button:** WAJIB — "Konsultasi Gratis" atau "Hubungi Kami" di kanan-bawah. Posisi ikuti Z-pattern.
 - **CTA Color:** `#10B981` (hijau) atau `#F59E0B` (kuning emas) — kontras terhadap palette teal.
 - **CTA Size:** **32px** font, weight 700, pill shape (border-radius 32px), padding 20px 48px.
@@ -90,7 +93,19 @@ Every catalog follows the same visual language, matching venturo.id branding. **
 - **Design approach:** "Rame tapi simple" — visually rich dengan SVG shapes, pattern, gradient, tapi tetap clean
 - **Bottom Grid:** 2-column layout
 - **Footer:** "© venturo.id" subtly placed, **24px**
-- **White Space:** Margin luar **64px**, gap antar section **48–64px**, padding internal card **48px**.
+- **White Space:** Margin luar **64px**, gap antar section **24–32px** (ketat!), padding internal card **48px**.
+
+### FULL CANVAS RULE — ANTI-GAP PROTOCOL
+
+Jika content sections tidak mengisi penuh 2048px height, terapkan protocol ini secara berurutan:
+
+1. **Tambah checkmark items** — ambil dari Masalah / Solusi / Hasil yang belum dipake. Urutan acak, jangan duplikat. Target: minimal 8 item.
+2. **Tambah SVG decorative cluster** — lingkaran, garis, dot pattern di area kosong. Bikin full-coverage, jangan cuma pojokan.
+3. **Tambah "Mengapa Memilih Venturo?" section** — 3-4 bullet point ekstra.
+4. **Perbesar visual elements** — timeline box diperbesar, team card dikasih deskripsi lebih panjang, tagline diperluas.
+5. **Terakhir: background SVG pattern diperbesar** sampe nutup semua ruang kosong.
+
+**Never leave gaps. Gap = failed poster.**
 
 ### Background Treatment
 - **Starter:** White with dot grid (`#006D79` 6% opacity), spacing **64px**
