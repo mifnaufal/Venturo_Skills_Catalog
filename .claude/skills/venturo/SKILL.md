@@ -94,25 +94,26 @@ Ketika skill ini dimuat di direktori `.claude/skills/venturo/`, Claude Code akan
 
 ### Color Assignment Per Tier
 
-| Tier | Background | Accent Blocks | Budget Pill |
-|------|-----------|---------------|-------------|
-| **Starter** | `#FFFFFF` | Solid teal (`#006D79`) | `#006D79` capsule, white text |
-| **Growth** | `#FFFFFF` + dot grid | Gradient teal (`#006D79` → `#009BAD`) | Gradient capsule |
-| **Enterprise** | Gradient `#0A1B1F` → `#112D35` | Light-teal blocks (`#009BAD`) | `#009BAD` capsule, dark text |
+| Tier | Background | Accent | Budget Pill |
+|------|-----------|--------|-------------|
+| **Starter** | `#FFFFFF` | `#006D79` | `#006D79` capsule, white text |
+| **Growth** | `#FFFFFF` + dot grid | `#006D79` | Gradient `#006D79` → `#009BAD` |
+| **Enterprise** | Gradient `#0A1B1F` → `#112D35` | `#009BAD` | `#009BAD` capsule, dark text |
 
-Capsule button shape: `border-radius: 22px` (fully rounded pill/capsule).
-Checkmark circles: radius 14px filled circle, white checkmark inside.
+Checkmark circles: **56×56px** filled circle, white ✓ inside (double dari 28px).
 
 ---
 
-### Layout Specs (1024×1024px Canvas)
+### Layout Specs (HD — 2048×2048px Canvas)
 
-- **Header**: Logo SVG + "PAKET [TIER]" massive (112px, weight 900, tracking -4px)
-- **Budget Box**: Solid color pill with price range
+- **Header**: Logo + "PAKET [TIER]" massive (**224px**, weight 900, tracking -8px)
+- **Budget Box**: Solid color pill with price range (**56px**)
 - **Typography**: Google Font Inter (all weights 300-900)
-- **Section Label**: Uppercase, letter-spacing 3-4px, 11px weight 800
-- **Feature/Bullet**: 14px weight 500 with checkmark icons
-- **Footer**: "© venturo.id" subtle muted gray
+- **Section Label**: Uppercase, **24px**, letter-spacing 8px, weight 800
+- **Feature/Bullet**: **36px** weight 600 with **56×56px** checkmark circles
+- **Illustrations**: WAJIB SVG (circle/path/polygon/pattern) dan/atau p5.js generative effects
+- **Footer**: "© venturo.id" subtle muted gray, **24px**
+- **Output**: 4096×4096px (DSF 2 × 2048 viewport)
 
 ---
 
@@ -171,8 +172,8 @@ terminal(command="claude -p 'Review docs paket enterprise dan tambahkan contoh i
 # Print mode kerja satu kali cepat
 terminal(command="claude -p 'Ringkas 3 paket Venturo dalam 3 paragraf masing-masing' --max-turns 3")
 
-# Generate poster via Playwright (gunakan venturo-poster skill)
-terminal(command="claude -p 'Generate poster starter PNG 1024x1024px pakai style doodle-block, warna #006D79, embed logo image.png' --max-turns 20")
+# Generate poster HD via Playwright (gunakan venturo-poster skill)
+terminal(command="claude -p 'Generate poster starter HD: 2048x2048 container + DSF 2 → 4096x4096 output, SVG illustrations, warna #006D79' --max-turns 20")
 ```
 
 ---
@@ -183,11 +184,13 @@ terminal(command="claude -p 'Generate poster starter PNG 1024x1024px pakai style
 - Format tabel perbandingan harus jelas dan mudah dibaca
 - Timeline tetap pakai format minggu/bulan dalam Bahasa Indonesia (misal: "1-2 Minggu", "1-2 Bulan")
 - Sebutkan budget dalam format "RpXX Juta" atau rentang budget
-- Untuk poster/png generation, pastikan ukuran canvas 1024x1024px
+- Untuk poster/png generation, gunakan **2048×2048px** container + DSF 2 → output **4096×4096px HD**
+- Gunakan konsep **"rame tapi simple"** — visually rich dengan SVG/p5.js, tapi hierarchy jelas
+- WAJIB ada illustrasi SVG (circle/path/polygon) ATAU p5.js (noise wave, random dots, particle)
 - Tone: profesional namun accessible, cocok untuk UMKM hingga enterprise
 - Always embed the Venturo logo (`image.png`) — DO NOT use plain text "VENTURO"
-- Use doodle-block style: solid teal blocks + dashed-outline cards + dotted dividers
-- All text must wrap properly — no clipping at 1024x1024 boundary
+- All text must wrap properly — no clipping at 2048×2048 boundary
+- Double semua ukuran font, padding, dan spacing (refer ke tabel di packages_context.md)
 
 ---
 

@@ -1,4 +1,4 @@
-# Venturo Skills Catalog
+# Venturo Skills Catalog (HD)
 
 Kumpulan skill untuk **Claude Code** dan **OpenCode** — AI coding agents — untuk membuat materi marketing dan katalog layanan **Venturo** (venturo.id).
 
@@ -6,13 +6,13 @@ Kumpulan skill untuk **Claude Code** dan **OpenCode** — AI coding agents — u
 
 ### [`skills/venturo-poster`](./skills/venturo-poster/SKILL.md)
 
-Skill untuk generate poster paket layanan Venturo berformat **PNG 1024×1024px** via Playwright. Mendukung tiga tier:
+Skill untuk generate poster paket layanan Venturo **HD** — container **2048×2048px** + Device Scale Factor 2 → output **4096×4096px** via Playwright. Mendukung tiga tier:
 
 - **Starter** — Rp20 Juta – Rp80 Juta, untuk UMKM & startup
 - **Growth** — Rp80 Juta – Rp250 Juta, untuk perusahaan yang butuh sistem custom
 - **Enterprise** — Mulai Rp250 Juta, untuk sistem skala besar & transformasi digital
 
-Style desain: **doodle-block** (teal color blocks, dotted dividers, dashed-outline cards, ilustrasi ikon, layout left-aligned). Mengikuti palet warna brand Venturo (`#006D79`, `#009BAD`, `#0A1B1F`).
+Style desain: **"rame tapi simple"** — visually rich dengan illustrasi **SVG** (circle, path, polygon, pattern) dan/atau **p5.js** generative effects (noise wave, random dots, particle), ditambah dot grid, gradient overlay, dan hierarchy jelas. Bukan doodle-block lagi.
 
 Satu poster = satu tier. Kalau minta "ketiganya", di-render jadi tiga file terpisah:
 `venturo-starter.png`, `venturo-growth.png`, `venturo-enterprise.png`.

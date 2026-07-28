@@ -1,6 +1,6 @@
-# Venturo Service Packages — Context for Catalog Generation
+# Venturo Service Packages — Context for Catalog Generation (HD)
 
-Use this reference to understand tier content and design specs. All catalogs are rendered as **square 1024x1024** PNG via Playwright.
+Use this reference to understand tier content and design specs. All posters are rendered at **2048×2048px** container with **Device Scale Factor 2** → output **4096×4096px** via Playwright.
 
 ---
 
@@ -68,33 +68,35 @@ Use this reference to understand tier content and design specs. All catalogs are
 
 ---
 
-## Design Specs — All Templates
+## Design Specs — All Templates (HD Edition)
 
-Every catalog follows the same visual language, matching venturo.id branding:
+Every catalog follows the same visual language, matching venturo.id branding. **Semua ukuran di-double untuk HD (2048×2048 container).**
 
 ### Layout Structure
-- **Canvas:** 1024×1024px square
-- **Header:** Venturo logo SVG + "PAKET [TIER]" in massive bold typography (112px, weight 900)
-- **Budget Box:** Solid color pill with price range
-- **Tagline:** 20px description paragraph under budget
-- **Section Label:** Uppercase, letter-spacing 4px
-- **Feature List:** Full-width checkmarks (solid teal circle with white ✓)
-- **Bottom Grid:** 2-column layout — left = team + timeline details, right = 2 highlight cards (cocok untuk + fase bisnis)
-- **Footer:** "© venturo.id" subtly placed bottom-left
+- **Canvas:** 2048×2048px square (bukan 1024)
+- **Header:** Venturo logo + "PAKET [TIER]" in massive bold typography (**224px**, weight 900, tracking -8px)
+- **Budget Box:** Solid color pill with price range (**56px**)
+- **Tagline:** **40px** description paragraph under budget
+- **Section Label:** Uppercase, **24px**, letter-spacing 8px
+- **Feature List:** Full-width checkmarks — solid teal circle **56×56px** with white ✓
+- **Illustrations:** WAJIB — SVG elements (circle/path/polygon/pattern) dan/atau p5.js generative effects
+- **Design approach:** "Rame tapi simple" — visually rich dengan SVG shapes, pattern, gradient, tapi tetap clean
+- **Bottom Grid:** 2-column layout
+- **Footer:** "© venturo.id" subtly placed, **24px**
 
 ### Background Treatment
-- **Starter:** White with very subtle dot grid (teal 6% opacity)
-- **Growth:** White with medium dot grid (teal 5% opacity), teal gradient budget box
-- **Enterprise:** Dark teal gradient (#0A1B1F → #112D35) with dot grid overlay + radial glow top-right
+- **Starter:** White with dot grid (`#006D79` 6% opacity), spacing **64px**
+- **Growth:** White with dot grid (`#009BAD` 5% opacity), spacing **48px**, teal gradient budget box
+- **Enterprise:** Dark teal gradient (#0A1B1F → #112D35) with dot grid overlay + radial glow radius **800px**
 
 ### Checkmarks
-- Solid filled circles (`#006D79` for Starter, `#006D79` for Growth, `#009BAD` for Enterprise)
-- White checkmark symbol inside
-- 28×28px diameter
+- Solid filled circles (accent color per tier)
+- White checkmark symbol inside (✓ / U+2713)
+- **56×56px** diameter (double from 28px)
 
 ### Typography
 - All using Google Fonts Inter (loaded via import)
-- Tier name: 112px, weight 900, tight tracking -4px
-- Budget: 28px, weight 800, rounded corners 10px
-- Feature items: 18px, weight 600
-- Section labels: 12px, weight 800, uppercase, letter-spacing 4px
+- Tier name: **224px**, weight 900, tracking -8px (double from 112px)
+- Budget: **56px**, weight 800, rounded corners **22px** (double from 28px/10px)
+- Feature items: **36px**, weight 600 (double from 18px)
+- Section labels: **24px**, weight 800, uppercase, letter-spacing 8px (double from 12px/4px)

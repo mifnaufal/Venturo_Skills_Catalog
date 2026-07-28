@@ -11,9 +11,11 @@ metadata:
     related_skills: [venturo-poster, venturo-opencode, venturo-hermes-agent]
 ---
 
-# Venturo — Claude Code Skill Guide (v2.0)
+# Venturo — Claude Code Skill Guide (v2.1)
 
-Gunakan [Claude Code](https://code.claude.com/docs) sebagai agen pengembangan otomatis untuk tugas-tugas terkait **Venturo** (venturo.id), seperti generate posterpaket layanan, dokumentasi service packages, atau pengembangan sistem custom sesuai kebutuhan UMKM/perusahaan.
+Gunakan **Claude Code** untuk tugas Venturo: generate poster HD, dokumentasi, dan konten marketing.
+
+**HD Rule:** Container **2048×2048px** + Device Scale Factor 2 → output **4096×4096px**. Semua font/padding/spacing di-double.
 
 Reference file: `/home/alxyz/Downloads/Project/Venturo_Skills_Catalog/packages_context.md`
 
@@ -89,7 +91,7 @@ tmux kill-session -t venturo-claude
 ### Step 1: Pilih Tier
 
 ```
-terminal(command="claude -p 'Generate poster starter PNG 1024x1024px dengan palet Venturo (#006D79, #009BAD) via Playwright' --max-turns 15")
+terminal(command="claude -p 'Generate poster starter HD 2048x2048 + DSF 2 (4096x4096 output) dengan palet Venturo (#006D79, #009BAD) via Playwright' --max-turns 15")
 ```
 
 ### Step 2: Pilih Content Sections
@@ -102,29 +104,32 @@ Atau minta user modifikasi wording, tagline, tambahkan/remove item.
 
 ---
 
-## Complete Playwright Integration — Generate Poster via Claude Code
+## Complete Playwright Integration — Generate Poster HD via Claude Code
 
-Membuat poster 1024x1024px PNG langsung dari Claude Code via Playwright MCP:
+Membuat poster **4096×4096px HD** langsung dari Claude Code via Playwright MCP:
 
 ```
 terminal(command="claude -p '''
-Membuat poster Venturo Starter via Playwright:
-1. Buat HTML file dengan struktur doodle-block style
-2. Gunakan font Inter dari Google Fonts
-3. Embed logo dari image.png base64
-4. Render ke PNG 1024x1024px
-5. Simpan di /tmp/venturo-starter.png
+Membuat poster Venturo Starter HD via Playwright:
+1. Container 2048x2048px (double size untuk HD)
+2. Semua ukuran font/padding di-double
+3. Gunakan font Inter dari Google Fonts
+4. Embed logo dari image.png base64
+5. SVG illustrations (circle, path, polygon) di background
+6. Opsional: p5.js efek generatif (noise wave, random dots)
+7. Render DSF 2 → output 4096x4096px
+8. Simpan di /tmp/venturo-starter.png
 ''' --max-turns 20", workdir="/home/alxyz/Downloads/Project/Venturo_Skills_Catalog", timeout=180)
 ```
 
-Or with explicit Playwright commands:
+Or with explicit Playwright commands (HD version):
 
 ```
-# Via Playwright browser automation (assuming MCP available)
+# Via Playwright browser automation (HD)
 mcp__playwright__browser_navigate(url="about:blank")
-mcp__playwright__browser_resize(width=1024, height=1024)
+mcp__playwright__browser_resize(width=2048, height=2048)
 mcp__playwright__browser_evaluate(function="(page) => { page.setContent('<html>...</html>'); }")
-mcp__playwright__browser_wait_for(time=2)
+mcp__playwright__browser_wait_for(time=3)
 mcp__playwright__browser_take_screenshot(type="png", scale="device", filename="venturo-starter.png")
 ```
 
@@ -142,17 +147,17 @@ terminal(command="claude -p 'Review packages_context.md, generate JSON structure
 terminal(command="opencode run 'Render poster Enterprise dari JSON structure di fase 1' --model openrouter/anthropic/claude-sonnet-4")
 
 # Phase 3: Claude Code validate output
-terminal(command="claude -p 'Validate venturo-enterprise.png: pastikan ukuran 1024x1024, warna #006D79 ada, text legible' --max-turns 3")
+terminal(command="claude -p 'Validate venturo-enterprise.png: pastikan ukuran 4096x4096 (HD), warna #006D79 ada, text legible, illustrasi SVG/p5.js ada' --max-turns 3")
 ```
 
 Alternative: Parallel execution for independent tasks:
 
 ```
-# Task 1: Generate starter poster via Claude
-terminal(command="claude -p 'Generate poster starter PNG 1024x1024' --max-turns 15 &")
+# Task 1: Generate starter poster HD via Claude
+terminal(command="claude -p 'Generate poster starter HD 2048x2048 + DSF 2' --max-turns 15 &")
 
-# Task 2: Generate growth poster via OpenCode
-terminal(command="opencode run 'Generate growth poster PNG 1024x1024' --max-turns 15 &")
+# Task 2: Generate growth poster HD via OpenCode
+terminal(command="opencode run 'Generate growth poster HD 2048x2048 + DSF 2' --max-turns 15 &")
 
 # Wait both
 sleep 30
@@ -236,8 +241,9 @@ Success criteria: Output mengandung `CLAUDE_VENTURO_OK`, command exit without er
 
 **Poster Generation Verification:**
 ```bash
-# Validate PNG dimensions
-file venturo-*.png  # Should say "PNG 1024 x 1024"
+# Validate PNG dimensions (HD — DSF 2 x 2048 viewport = 4096)
+file venturo-*.png  # Should say "PNG 4096 x 4096"
+identify venturo-*.png | awk '{print $3}'  # Alternative: should output "4096x4096"
 # Check color presence
 grep -c "#006D79" venturo-starter.html > /dev/null && echo "Primary teal found" || echo "Missing primary color"
 ```
@@ -259,10 +265,11 @@ grep -c "#006D79" venturo-starter.html > /dev/null && echo "Primary teal found" 
 ## What NOT to Do
 
 - **Do NOT** generate poster without completing the Q&A flow first
+- **Do NOT** use 1024×1024 container — always **2048×2048** (HD)
+- **Do NOT** lupa double semua ukuran font, padding, spacing
+- **Do NOT** skip illustrasi SVG/p5.js — setiap poster WAJIB punya vector elements
 - **Do NOT** use wrong font family — always use Inter
-- **Do NOT** clip text at 1024x1024 boundary — all content must fit
-- **Do NOT** skip illustration icons — each section MUST have doodle-style icon
-- **Do NOT** right-align content — all main content is left-aligned
+- **Do NOT** clip text at 2048×2048 boundary — all content must fit
 - **Do NOT** use JPEG — always PNG for crisp text
 
 ---

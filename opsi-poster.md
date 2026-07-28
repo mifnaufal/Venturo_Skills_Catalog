@@ -1,5 +1,7 @@
 # Opsi Konten Poster Venturo — Referensi AI
 
+> **HD Rule:** Semua nilai font/padding/spacing di bawah untuk target 1024px. Saat render, DOUBLE semua ukuran (container 2048×2048) + Device Scale Factor 2 → output 4096×4096px.
+
 ## Opsi 1 — Format Kartu Paket (Instagram 1:1)
 
 ### STARTER PACKAGE

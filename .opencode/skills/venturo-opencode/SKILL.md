@@ -11,13 +11,15 @@ metadata:
     related_skills: [venturo-poster, venturo-claude-code, venturo-hermes-agent]
 ---
 
-# Venturo — OpenCode Skill Guide (v2.0)
+# Venturo — OpenCode Skill Guide (v2.1)
 
-Gunakan [OpenCode](https://opencode.ai) sebagai agen pengembangan otomatis untuk tugas-tugas terkait **Venturo** (venturo.id), seperti generate posterpaket layanan, dokumentasi service packages, atau pengembangan sistem custom sesuai kebutuhan UMKM/perusahaan.
+Gunakan **OpenCode** untuk tugas marketing Venturo: generate poster iklan HD, dokumentasi paket layanan, dan konten promosi.
+
+**HD Poster Rule:** Semua poster di-render di **2048×2048px** container dengan **Device Scale Factor 2** → output **4096×4096px** (super tajam, scalable ke 1024px tanpa pecah).
 
 Reference file: `/home/alxyz/Downloads/Project/Venturo_Skills_Catalog/packages_context.md`
 
-Opsi konten poster: `/home/alxyz/Downloads/Project/Venturo_Skills_Catalog/opsi-poster.md` — 4 format konten berbeda (mau Opsi 1-4, tinggal callout)
+Opsi konten poster: `/home/alxyz/Downloads/Project/Venturo_Skills_Catalog/opsi-poster.md` — 4 format konten berbeda (Opsi 1-4)
 
 ---
 
@@ -99,12 +101,12 @@ process(action="write", session_id="ses_abc123", data="\x03")
 
 ## Interactive Workflow (WAJIB PAKAI INI)
 
-### Flow A: Poster Iklan
+### Flow A: Poster Iklan (HD — 4096×4096px output)
 1. **Tanya tier** → Starter / Growth / Enterprise / All
 2. **Tanya konten** → Masalah? Solusi? Hasil? Paket Details? (default: semua)
 3. **Tanya illustrasi** → User minta gaya tertentu? Biarin AI tentuin?
 4. **Tanya custom** → Ada copy yg diubah? Atau pakai default?
-5. **Generate** → Eksekusi poster via Playwright
+5. **Generate** → Eksekusi poster via Playwright (viewport 2048×2048, DSF 2)
 
 ### Flow B: Dokumentasi
 1. **Tanya tujuan** → Dokumentasi internal atau client-facing?
