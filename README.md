@@ -1,6 +1,6 @@
 # Venturo Skills Catalog
 
-Kumpulan Claude Code skill untuk membuat materi marketing dan katalog layanan **Venturo** (venturo.id).
+Kumpulan skill untuk **Claude Code** dan **OpenCode** — AI coding agents — untuk membuat materi marketing dan katalog layanan **Venturo** (venturo.id).
 
 ## Isi
 
@@ -23,7 +23,7 @@ Satu poster = satu tier. Kalau minta "ketiganya", di-render jadi tiga file terpi
 
 ## Penggunaan
 
-Panggil skill-nya lewat Claude Code, lalu ikuti Q&A flow di SKILL.md:
+Panggil skill-nya lewat Claude Code atau OpenCode, lalu ikuti Q&A flow di SKILL.md:
 
 1. Pilih tier (Starter / Growth / Enterprise / All Three)
 2. Pilih section konten (Masalah, Solusi, Hasil, Paket Details, Custom)
@@ -32,4 +32,6 @@ Panggil skill-nya lewat Claude Code, lalu ikuti Q&A flow di SKILL.md:
 
 ## Repository
 
-Single-purpose: berisi skill file + reference data, tanpa build step. Clone langsung, buka di Claude Code, panggil skill-nya.
+Single-purpose: berisi skill file + reference data, tanpa build step. Clone langsung, buka dengan AI coding agent, panggil skill-nya.
+
+OpenCode akan auto-discover skill dari `.opencode/skills/` atau `.claude/skills/`.
