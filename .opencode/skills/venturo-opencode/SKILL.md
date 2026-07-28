@@ -268,4 +268,11 @@ grep -c "#006D79" venturo-growth.html > /dev/null && echo "Primary teal found" |
 
 ---
 
+### Poster Design Rules (WAJIB saat generate poster)
+- **Do NOT** skip illustrasi SVG/p5.js — setiap poster WAJIB punya vector elements di background
+- **Do NOT** lupa CTA button "Konsultasi Gratis" di kanan-bawah, pake accent color `#10B981`
+- **Do NOT** buat illustrasi compete dengan tier name 224px — taruh di z-index 0, opacity max 0.15
+- **Do NOT** lupa white space — margin luar 64px, gap antar section 48–64px
+- **Do NOT** pakai warna lebih dari 4: background, primary, secondary, CTA accent
+
 **Catatan:** Skill ini bekerja sama dengan `venturo-poster`, `venturo-claude-code`, dan `venturo-hermes-agent` di katalog Venturo. Semua skill mengacu pada `packages_context.md` sebagai sumber data tunggal. Siap dipakai via Hermes Agent, Claude Code MCP, atau OpenCode CLI.

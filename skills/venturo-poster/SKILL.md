@@ -272,6 +272,11 @@ function draw() {
 - [ ] Ada illustrasi SVG ATAU p5.js (bukan cuma CSS doang)
 - [ ] Ukuran container **2048×2048** (bukan 1024)
 - [ ] Semua ukuran font/padding/spacing sudah di-double
+- [ ] **Tier name 224px = satu-satunya focal point** — illustrasi di background, opacity max 0.15
+- [ ] **CTA button ada** — "Konsultasi Gratis" / "Hubungi Kami", accent color (`#10B981` atau `#F59E0B`)
+- [ ] **Z-Pattern layout** — Logo ki-atas → Tier ka-atas → Content ki-bawah → CTA ka-bawah
+- [ ] Margin luar container: **64px** kiri & kanan (konsisten)
+- [ ] Gap antar section: **48–64px**
 - [ ] No more than 160px empty vertical space between sections
 - [ ] At least 8–12 checkmark icons per poster
 - [ ] Dot grid or texture covers the entire canvas background
@@ -288,6 +293,48 @@ function draw() {
 | Clear hierarchy through size & weight | No visual distinction |
 | Consistent vertical rhythm | Random spacing |
 | Background textures + SVG/p5.js add depth | Flat, boring backgrounds |
+
+### Design Principles from Research
+
+**1. Satu Focal Point — Tier Name = Raja**
+- Tier name **224px** adalah satu-satunya elemen dominan. Jangan ada yang compete.
+- Ilustrasi SVG/p5.js di `z-index: 0` dengan `opacity` max **0.15** — background doang.
+- Logo Venturo kecil (72–96px) di pojok kiri atas — jangan gede-gedein.
+
+**2. Z-Pattern Layout**
+Mata viewer scan dalam pola Z: **kiri-atas → kanan-atas → kiri-bawah → kanan-bawah**.
+```
+1. Logo (kiri-atas, x=64, y=48)   →   2. Tier name (kanan-atas, 224px)
+                                        ↓
+3. Content sections (kiri-bawah)   →   4. CTA / Footer (kanan-bawah)
+```
+- Gunakan pola ini untuk posisi semua elemen.
+- Content sections rata kiri semua (F-pattern di dalam Z-pattern).
+
+**3. CTA Button — WAJIB Ada**
+- "© venturo.id" di footer aja **tidak cukup**. Setiap poster butuh **Call to Action**.
+- **CTA button:** "Konsultasi Gratis" atau "Hubungi Kami" berbentuk pill / rounded rectangle.
+- Posisi: **kanan-bawah** (mengikuti Z-pattern), atau **center-bottom**.
+- Warna CTA: pilih 1 accent color yang kontras — misal **#10B981** (hijau) atau **#F59E0B** (kuning emas).
+- Ukuran: font **32px**, weight 700, padding internal 20px 48px, border-radius 32px.
+
+**4. White Space & Grid Alignment**
+- Margin luar container: **64px** kiri & kanan (konsisten).
+- Gap antar section: **48–64px** (jangan kurang dari 48px).
+- Semua konten teks **rata kiri** — jangan center alignment kecuali CTA.
+- Padding internal card/block: **48px**.
+- Gunakan jarak napas di sekitar tier name dan budget pill — mereka harus punya "ruang" untuk bernapas.
+
+**5. Color Limit — Max 4 Warna**
+| Peran | Contoh |
+|-------|--------|
+| Background | #FFFFFF atau #0A1B1F gradient |
+| Primary accent | #006D79 |
+| Secondary accent | #009BAD |
+| CTA accent | #10B981 atau #F59E0B |
+- Jangan pakai warna lain di luar 4 ini.
+- Checkmark circles pake primary accent.
+- Text body pake #374151 (dark gray) atau putih di dark bg.
 
 ---
 
@@ -404,6 +451,14 @@ Default content blocks:
 - [ ] Timeline phases and durations match the reference data
 - [ ] No content sections accidentally omitted
 
+### Layout & Design Principles
+- [ ] **Tier name 224px = satu-satunya focal point** — tidak ada elemen lain yang compete
+- [ ] **CTA button "Konsultasi Gratis" / "Hubungi Kami" ada** di kanan-bawah
+- [ ] **CTA pake accent color** (`#10B981` / `#F59E0B`) — bukan teal
+- [ ] **Z-Pattern layout** diikuti: Logo → Tier name → Content → CTA
+- [ ] Margin luar **64px**, gap antar section **48–64px** konsisten
+- [ ] Warna max 4: background, primary, secondary, CTA accent
+
 ### Visual Completeness
 - [ ] Ada illustrasi via SVG ATAU p5.js (jangan cuma CSS)
 - [ ] Container **2048×2048**, semua ukuran sudah di-double
@@ -461,3 +516,6 @@ If the user supplies their own text (custom problems, solutions, taglines, budge
 - **Do NOT** render as JPEG — always PNG
 - **Do NOT** let text overflow, clip, or overlap
 - **Do NOT** mix tier content in one poster
+- **Do NOT** lupa CTA button — setiap poster WAJIB punya "Konsultasi Gratis" atau "Hubungi Kami"
+- **Do NOT** buat elemen lain compete dengan tier name 224px — illustrasi harus di background
+- **Do NOT** lupa white space — margin luar **64px**, gap antar section **48–64px**

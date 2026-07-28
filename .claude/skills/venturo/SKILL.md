@@ -102,16 +102,22 @@ Ketika skill ini dimuat di direktori `.claude/skills/venturo/`, Claude Code akan
 
 Checkmark circles: **56×56px** filled circle, white ✓ inside (double dari 28px).
 
+**CTA accent:** `#10B981` (hijau) untuk button "Konsultasi Gratis" — kontras terhadap palette teal.
+
 ---
 
-### Layout Specs (HD — 2048×2048px Canvas)
+### Layout Specs (HD — 2048×2048px, 1:1)
 
-- **Header**: Logo + "PAKET [TIER]" massive (**224px**, weight 900, tracking -8px)
+- **Layout Pattern**: Z-Pattern — Logo (ki-atas) → Tier name (ka-atas) → Content (ki-bawah) → CTA (ka-bawah)
+- **Focal Point**: Tier **224px** adalah satu-satunya elemen dominan. Illustrasi di z-index 0, opacity max 0.15.
+- **Header**: Logo small 72–96px + "PAKET [TIER]" massive (**224px**, weight 900, tracking -8px)
 - **Budget Box**: Solid color pill with price range (**56px**)
+- **CTA Button**: WAJIB — "Konsultasi Gratis" di kanan-bawah, `#10B981`, font **32px** weight 700, pill shape
 - **Typography**: Google Font Inter (all weights 300-900)
 - **Section Label**: Uppercase, **24px**, letter-spacing 8px, weight 800
 - **Feature/Bullet**: **36px** weight 600 with **56×56px** checkmark circles
-- **Illustrations**: WAJIB SVG (circle/path/polygon/pattern) dan/atau p5.js generative effects
+- **Illustrations**: WAJIB SVG/p5.js di background (jangan compete dengan konten)
+- **White Space**: Margin luar **64px**, gap antar section **48–64px**
 - **Footer**: "© venturo.id" subtle muted gray, **24px**
 - **Output**: 4096×4096px (DSF 2 × 2048 viewport)
 
@@ -180,17 +186,20 @@ terminal(command="claude -p 'Generate poster starter HD: 2048x2048 container + D
 
 ## CLAUDE.md Rules Tambahan (untuk Project Context)
 
-- Gunakan palet warna `#006D79`, `#009BAD`, `#0A1B1F` untuk semua desain/konten terkait Venturo
+- Gunakan palet warna `#006D79`, `#009BAD`, `#0A1B1F` + CTA accent `#10B981` untuk semua desain/konten terkait Venturo
 - Format tabel perbandingan harus jelas dan mudah dibaca
 - Timeline tetap pakai format minggu/bulan dalam Bahasa Indonesia (misal: "1-2 Minggu", "1-2 Bulan")
 - Sebutkan budget dalam format "RpXX Juta" atau rentang budget
 - Untuk poster/png generation, gunakan **2048×2048px** container + DSF 2 → output **4096×4096px HD**
 - Gunakan konsep **"rame tapi simple"** — visually rich dengan SVG/p5.js, tapi hierarchy jelas
-- WAJIB ada illustrasi SVG (circle/path/polygon) ATAU p5.js (noise wave, random dots, particle)
+- WAJIB ada illustrasi SVG (circle/path/polygon) ATAU p5.js (noise wave, random dots, particle) — di z-index 0, opacity max 0.15
 - Tone: profesional namun accessible, cocok untuk UMKM hingga enterprise
 - Always embed the Venturo logo (`image.png`) — DO NOT use plain text "VENTURO"
 - All text must wrap properly — no clipping at 2048×2048 boundary
 - Double semua ukuran font, padding, dan spacing (refer ke tabel di packages_context.md)
+- WAJIB ada CTA button "Konsultasi Gratis" di kanan-bawah, pake accent color `#10B981`
+- Gunakan Z-Pattern layout: Logo(ki-atas) → Tier name(ka-atas) → Content(ki-bawah) → CTA(ka-bawah)
+- Palet max 4 warna: background + `#006D79` + `#009BAD` + CTA accent
 
 ---
 
@@ -206,7 +215,7 @@ claude_output = terminal(command="claude -p 'Review packages_context.md, generat
 opencode_output = terminal(command="opencode run 'Render poster Enterprise dari JSON structure' --max-turns 15")
 
 # Claude Code validate output
-validation = terminal(command="claude -p 'Validate venturo-enterprise.png: pastikan 1024x1024, warna benar, text legible' --max-turns 3")
+validation = terminal(command="claude -p 'Validate venturo-enterprise.png: pastikan ukuran 4096x4096 (HD), CTA button ada, Z-Pattern layout benar' --max-turns 3")
 ```
 
 ---

@@ -268,6 +268,8 @@ grep -c "#006D79" venturo-starter.html > /dev/null && echo "Primary teal found" 
 - **Do NOT** use 1024×1024 container — always **2048×2048** (HD)
 - **Do NOT** lupa double semua ukuran font, padding, spacing
 - **Do NOT** skip illustrasi SVG/p5.js — setiap poster WAJIB punya vector elements
+- **Do NOT** lupa CTA button ("Konsultasi Gratis") di kanan-bawah, pake accent color
+- **Do NOT** buat illustrasi compete dengan tier name 224px — taruh di background
 - **Do NOT** use wrong font family — always use Inter
 - **Do NOT** clip text at 2048×2048 boundary — all content must fit
 - **Do NOT** use JPEG — always PNG for crisp text

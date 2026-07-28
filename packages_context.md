@@ -56,7 +56,7 @@ Use this reference to understand tier content and design specs. All posters are 
 
 | Color | Hex | Usage |
 |-------|-----|-------|
-| Primary Teal | `#006D79` | Brand primary |
+| Primary Teal | `#006D79` | Brand primary, checkmarks |
 | Primary Light | `#009BAD` | Brand secondary / accents |
 | Dark BG | `#0A1B1F` | Enterprise dark background |
 | Dark Surface | `#142A2F` | Enterprise gradient mid-tone |
@@ -65,6 +65,8 @@ Use this reference to understand tier content and design specs. All posters are 
 | Heading | `#006D79` | Tier headings (Starter/Growth) |
 | Body Text | `#374151` | Description text |
 | Grid Color | `#009BAD` | Subtle dot grid accent |
+| **CTA Green** | **`#10B981`** | **CTA button — "Konsultasi Gratis" / "Hubungi Kami"** |
+| **CTA Gold** | **`#F59E0B`** | **Alternative CTA accent** |
 
 ---
 
@@ -74,15 +76,21 @@ Every catalog follows the same visual language, matching venturo.id branding. **
 
 ### Layout Structure
 - **Canvas:** 2048×2048px square (bukan 1024)
-- **Header:** Venturo logo + "PAKET [TIER]" in massive bold typography (**224px**, weight 900, tracking -8px)
+- **Layout Pattern:** Z-Pattern — Logo (kiri-atas) → Tier name (kanan-atas) → Content (kiri-bawah) → CTA (kanan-bawah)
+- **Focal Point:** Tier **224px** adalah raja. Ilustrasi SVG/p5.js di z-index 0, opacity max 0.15 — jangan compete dengan tier name.
+- **Header:** Venturo logo small (72–96px) + "PAKET [TIER]" in massive bold typography (**224px**, weight 900, tracking -8px)
 - **Budget Box:** Solid color pill with price range (**56px**)
 - **Tagline:** **40px** description paragraph under budget
 - **Section Label:** Uppercase, **24px**, letter-spacing 8px
 - **Feature List:** Full-width checkmarks — solid teal circle **56×56px** with white ✓
+- **CTA Button:** WAJIB — "Konsultasi Gratis" atau "Hubungi Kami" di kanan-bawah. Posisi ikuti Z-pattern.
+- **CTA Color:** `#10B981` (hijau) atau `#F59E0B` (kuning emas) — kontras terhadap palette teal.
+- **CTA Size:** **32px** font, weight 700, pill shape (border-radius 32px), padding 20px 48px.
 - **Illustrations:** WAJIB — SVG elements (circle/path/polygon/pattern) dan/atau p5.js generative effects
 - **Design approach:** "Rame tapi simple" — visually rich dengan SVG shapes, pattern, gradient, tapi tetap clean
 - **Bottom Grid:** 2-column layout
 - **Footer:** "© venturo.id" subtly placed, **24px**
+- **White Space:** Margin luar **64px**, gap antar section **48–64px**, padding internal card **48px**.
 
 ### Background Treatment
 - **Starter:** White with dot grid (`#006D79` 6% opacity), spacing **64px**
