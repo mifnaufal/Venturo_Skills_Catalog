@@ -1,6 +1,6 @@
 # Venturo Service Packages — Context for Catalog Generation (HD)
 
-Use this reference to understand tier content and design specs. All posters are rendered at **2048×2048px** container with **Device Scale Factor 2**.
+Use this reference to understand tier content and color palette. All posters are rendered at **2048×2048px** container with **Device Scale Factor 2**.
 
 ---
 
@@ -39,14 +39,14 @@ Use this reference to understand tier content and design specs. All posters are 
 
 ---
 
-# Paket Pengembangan Sistem
+# Paket Pengembangan System
 
 | **Starter** | **Growth** | **Enterprise** |
 | --- | --- | --- |
 | **Ideal untuk** UMKM, usaha mikro, perusahaan kecil, dan startup yang membutuhkan website, mobile application, atau sistem operasional sederhana untuk mendukung proses bisnis. **Budget Proyek** Rp20 Juta – Rp80 Juta | **Ideal untuk** perusahaan yang membutuhkan website atau aplikasi custom sesuai proses bisnis, seperti Finance System, HRIS, CRM, ERP, Inventory, Procurement, Warehouse Management System (WMS), Logistic Management System, Sales Management, Production Management, Asset Management, maupun sistem operasional lainnya untuk meningkatkan efisiensi operasional dan mendukung pertumbuhan bisnis. **Budget Proyek** Rp80 Juta – Rp250 Juta | **Ideal untuk** perusahaan menengah hingga enterprise yang membutuhkan sistem berskala besar, integrasi lintas sistem, keamanan tingkat tinggi, AI, Big Data, maupun transformasi digital secara menyeluruh. **Budget Proyek** Mulai dari Rp250 Juta |
 | **Dedicated Team** | **Dedicated Team** | **Dedicated Team** |
 | • 1 Business Analyst<br>• 1 Senior Software Engineer | • 1 Business Analyst<br>• 1 Senior Software Engineer<br>• 1 UI/UX Designer<br>• 1 QA Engineer | • 1 Business Analyst<br>• 1 Senior Software Engineer<br>• 1 Intermediate Software Engineer<br>• 1 UI/UX Designer<br>• 1 QA Engineer<br>• 1 Penetration Tester |
-| **Timeline**<br>• Requirement Analysis & System Design : **1 – 2 Minggu**<br>• System Development : **2 Minggu – 1 Bulan**<br>• Testing (SIT & UAT), Deployment & Go-Live : **1 – 2 Minggu** | **Timeline**<br>• Requirement Analysis & System Design : **2 Minggu – 1 Bulan**<br>• System Development : **1 ��� 2 Bulan**<br>• Testing (SIT & UAT), Deployment & Go-Live : **2 Minggu – 1 Bulan** | **Timeline**<br>• Requirement Analysis & System Design : **1 – 2 Bulan**<br>• System Development : **2 – 4 Bulan**<br>• Testing (SIT & UAT), Deployment & Go-Live : **2 Bulan** |
+| **Timeline**<br>• Requirement Analysis & System Design : **1 – 2 Minggu**<br>• System Development : **2 Minggu – 1 Bulan**<br>• Testing (SIT & UAT), Deployment & Go-Live : **1 – 2 Minggu** | **Timeline**<br>• Requirement Analysis & System Design : **2 Minggu – 1 Bulan**<br>• System Development : **1 – 2 Bulan**<br>• Testing (SIT & UAT), Deployment & Go-Live : **2 Minggu – 1 Bulan** | **Timeline**<br>• Requirement Analysis & System Design : **1 – 2 Bulan**<br>• System Development : **2 – 4 Bulan**<br>• Testing (SIT & UAT), Deployment & Go-Live : **2 Bulan** |
 
 - Durasi pengembangan dapat menyesuaikan kompleksitas fitur, integrasi sistem, dan ruang lingkup proyek.
 
@@ -68,58 +68,3 @@ Use this reference to understand tier content and design specs. All posters are 
 | **CTA Green** | **`#10B981`** | **CTA button — "Konsultasi Gratis" / "Hubungi Kami"** |
 | **CTA Gold** | **`#F59E0B`** | **Alternative CTA accent** |
 
----
-
-## Design Specs — All Templates (HD Edition)
-
-Every catalog follows the same visual language, matching venturo.id branding. **Semua ukuran di-double untuk HD (2048×2048 container).**
-
-### Layout Structure
-- **Canvas:** 2048×2048px square (bukan 1024) — **WAJIB 100% FULL, NO EMPTY GAPS**
-- **Layout Pattern:** Z-Pattern — Logo (kiri-atas) → Tier name (kanan-atas) → Content (kiri-bawah) → CTA (kanan-bawah)
-- **Focal Point:** Tier **224px** adalah raja. Ilustrasi SVG/p5.js di z-index 0, opacity max 0.15 — jangan compete dengan tier name.
-- **Header:** Venturo logo small (72–96px) + "PAKET [TIER]" in massive bold typography (**224px**, weight 900, tracking -8px)
-- **Budget Box:** Solid color pill with price range (**56px**)
-- **Tagline:** **40px** description paragraph under budget
-- **Section Label:** Uppercase, **24px**, letter-spacing 8px
-- **Feature List:** Full-width checkmarks — solid teal circle **56×56px** with white ✓. **MINIMAL 8 item.**
-- **Timeline:** Full-width 3-phase dengan progress bar, box per fase, arrow connector
-- **Team:** Kartu per role dengan icon + deskripsi
-- **Filler Rule:** Kalo content gak nyampe 2048px, **WAJIB tambah filler** — SVG decorative cluster / extra checkmark items dari default set / extra section "Mengapa Memilih Venturo?"
-- **CTA Button:** WAJIB — "Konsultasi Gratis" atau "Hubungi Kami" di kanan-bawah. Posisi ikuti Z-pattern.
-- **CTA Color:** `#10B981` (hijau) atau `#F59E0B` (kuning emas) — kontras terhadap palette teal.
-- **CTA Size:** **32px** font, weight 700, pill shape (border-radius 32px), padding 20px 48px.
-- **Illustrations:** WAJIB — SVG elements (circle/path/polygon/pattern) dan/atau p5.js generative effects
-- **Design approach:** "Rame tapi simple" — visually rich dengan SVG shapes, pattern, gradient, tapi tetap clean
-- **Bottom Grid:** 2-column layout
-- **Footer:** "© venturo.id" subtly placed, **24px**
-- **White Space:** Margin luar **64px**, gap antar section **24–32px** (ketat!), padding internal card **48px**.
-
-### FULL CANVAS RULE — ANTI-GAP PROTOCOL
-
-Jika content sections tidak mengisi penuh 2048px height, terapkan protocol ini secara berurutan:
-
-1. **Tambah checkmark items** — ambil dari Masalah / Solusi / Hasil yang belum dipake. Urutan acak, jangan duplikat. Target: minimal 8 item.
-2. **Tambah SVG decorative cluster** — lingkaran, garis, dot pattern di area kosong. Bikin full-coverage, jangan cuma pojokan.
-3. **Tambah "Mengapa Memilih Venturo?" section** — 3-4 bullet point ekstra.
-4. **Perbesar visual elements** — timeline box diperbesar, team card dikasih deskripsi lebih panjang, tagline diperluas.
-5. **Terakhir: background SVG pattern diperbesar** sampe nutup semua ruang kosong.
-
-**Never leave gaps. Gap = failed poster.**
-
-### Background Treatment
-- **Starter:** White with dot grid (`#006D79` 6% opacity), spacing **64px**
-- **Growth:** White with dot grid (`#009BAD` 5% opacity), spacing **48px**, teal gradient budget box
-- **Enterprise:** Dark teal gradient (#0A1B1F → #112D35) with dot grid overlay + radial glow radius **800px**
-
-### Checkmarks
-- Solid filled circles (accent color per tier)
-- White checkmark symbol inside (✓ / U+2713)
-- **56×56px** diameter (double from 28px)
-
-### Typography
-- All using Google Fonts Inter (loaded via import)
-- Tier name: **224px**, weight 900, tracking -8px (double from 112px)
-- Budget: **56px**, weight 800, rounded corners **22px** (double from 28px/10px)
-- Feature items: **36px**, weight 600 (double from 18px)
-- Section labels: **24px**, weight 800, uppercase, letter-spacing 8px (double from 12px/4px)
