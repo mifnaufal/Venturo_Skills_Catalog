@@ -1,6 +1,6 @@
 # Venturo Service Packages — Context for Catalog Generation (HD)
 
-Use this reference to understand tier content and design specs. All posters are rendered at **2048×2048px** container with **Device Scale Factor 2** → output **4096×4096px** via Playwright.
+Use this reference to understand tier content and design specs. All posters are rendered at **2048×2048px** container with **Device Scale Factor 2**.
 
 ---
 
