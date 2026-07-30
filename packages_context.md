@@ -67,4 +67,3 @@ Use this reference to understand tier content and color palette. All posters are
 | Grid Color | `#009BAD` | Subtle dot grid accent |
 | **CTA Green** | **`#10B981`** | **CTA button — "Konsultasi Gratis" / "Hubungi Kami"** |
 | **CTA Gold** | **`#F59E0B`** | **Alternative CTA accent** |
-
