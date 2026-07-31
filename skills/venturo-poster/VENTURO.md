@@ -41,7 +41,6 @@ User asks for a Venturo service package poster, specifies a tier
    - Style direction: clean modern teal-themed Indonesian service
      package poster, Z-pattern layout, CTA "Konsultasi Gratis" in
      `#10B981` (or "Hubungi Kami" in `#F59E0B` for Enterprise)
-   - Theme selection from below (see **Theme Variations**)
    - Tier-specific headline: "PAKET STARTER" / "PAKET GROWTH" /
      "PAKET ENTERPRISE"
 5. Invoke the `canvas-design` skill via the Skill tool, passing the
@@ -60,34 +59,3 @@ User asks for a Venturo service package poster, specifies a tier
   the file before continuing.
 - If the `canvas-design` skill is not installed globally, instruct
   the user to install it before retrying.
-
-## Theme Variations
-
-### 🎨 Modern Craftsmanship (Default)
-- **Style**: Hand-crafted, museum-quality aesthetic with meticulous attention to detail
-- **Typography**: Elegant serif/display fonts with balanced spacing
-- **Vibe**: Professional, authoritative, timelessness
-
-### ⚡ Minimalist Geometry
-- **Style**: Clean geometric shapes, ample whitespace, grid-based layout
-- **Typography**: Sans-serif, ultra-clean, large headlines with tight tracking
-- **Vibe**: Modern, tech-forward, minimalist sophistication
-
-### ✍️ Bold Typography
-- **Style**: Text-driven composition with dramatic typography hierarchy
-- **Typography**: Ultra-bold display fonts stacked vertically, high contrast
-- **Vibe**: Confident, impactful, editorial
-
-### 💎 Luxury Elegance
-- **Style**: Subtle gradients, metallic accents, refined details
-- **Typography**: Thin elegant serifs with generous letter-spacing
-- **Vibe**: Premium, exclusive, sophisticated
-
-### 🌈 Dynamic Gradient
-- **Style**: Vibrant gradient mesh backgrounds, dynamic motion feel
-- **Typography**: Rounded sans-serifs, soft shadows, layered depth
-- **Vibe**: Energetic, contemporary, forward-looking
-
----
-
-*Tip: Specify your preferred theme when requesting a poster (e.g., "Use Bold Typography theme for the Starter poster").*
