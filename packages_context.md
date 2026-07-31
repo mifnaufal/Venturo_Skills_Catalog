@@ -1,6 +1,6 @@
 # Venturo Service Packages — Context for Catalog Generation (HD)
 
-Use this reference to understand tier content and color palette. All posters are rendered at **2048×2048px** container with **Device Scale Factor 2**.
+Use this reference to understand tier content and color palette. All posters are rendered at **1048×1048px** container with **Device Scale Factor 2**.
 
 ---
 

@@ -4,7 +4,7 @@ description: >
   Generate Venturo Service Package posters (Starter, Growth, Enterprise)
   using the project's brand context from packages_context.md. Delegates the
   actual design/render to the global canvas-design skill, producing a
-  premium visual philosophy expressed as PNG/PDF output sized 2048x2048.
+  premium visual philosophy expressed as PNG/PDF output sized 1048x1048.
   Trigger phrases: "design venturo poster", "create venturo package poster",
   "venturo starter poster", "venturo growth poster", "venturo enterprise poster",
   "buatkan poster paket venturo".
@@ -37,7 +37,7 @@ User asks for a Venturo service package poster, specifies a tier
    - Tier content fields above (verbatim where possible)
    - Brand color palette (hex codes) — these are anchor tones, not the
      whole composition
-   - Canvas: square, 2048 x 2048 PNG
+   - Canvas: square, 1048 x 1048 PNG
    - Style direction: clean modern teal-themed Indonesian service
      package poster, Z-pattern layout, CTA "Konsultasi Gratis" in
      `#10B981` (or "Hubungi Kami" in `#F59E0B` for Enterprise)
