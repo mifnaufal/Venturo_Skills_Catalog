@@ -1,4 +1,17 @@
-.playwright-mcp
-conversations/
-graphify-out/
-posters/
+# Dependencies
+node_modules/
+
+# Playwright browser profile (login session, storage state — 30MB+, secret)
+.qwen-profile/
+
+# Generated output (poster PNG, debug screenshots, click records, logs)
+output/
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor
+.idea/
+.vscode/

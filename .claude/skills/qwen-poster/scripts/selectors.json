@@ -1,0 +1,42 @@
+{
+  "chatInput": [
+    "textarea.message-input-textarea",
+    "textarea"
+  ],
+  "thinkingSelector": [
+    ".qwen-select-thinking-label"
+  ],
+  "thinkingOption": [
+    "div.ant-select-item-option-content:has-text('Thinking')"
+  ],
+  "modeButton": [
+    "div.mode-select-open"
+  ],
+  "menuCreateImage": [
+    "div.mode-select-dropdown-item:has-text('Create Image')",
+    "li.ant-dropdown-menu-item:has-text('Create Image')"
+  ],
+  "imageModelButton": [
+    "div.image-model-selector-button"
+  ],
+  "imageModelOption": [
+    "li.ant-dropdown-menu-item:has-text('Qwen-Image 3.0')",
+    "div.ant-dropdown-menu-item:has-text('Qwen-Image 3.0')"
+  ],
+  "sizeSelector": [
+    "div.size-selector"
+  ],
+  "sizeOption1to1": [
+    "li.ant-dropdown-menu-item:has-text('1:1')",
+    "div.ant-dropdown-menu-item:has-text('1:1')"
+  ],
+  "sendButton": [
+    "button.send-button"
+  ],
+  "generatingIndicator": [
+    "text=Generating",
+    "text=generating",
+    "text=绘制中",
+    "text=生成中"
+  ]
+}
