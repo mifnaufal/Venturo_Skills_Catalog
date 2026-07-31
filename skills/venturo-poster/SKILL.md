@@ -29,8 +29,8 @@ User asks for a Venturo service package poster, specifies a tier
    project-relative).
 2. Confirm the tier with the user if ambiguous. Default: **Starter**.
 3. Extract from `packages_context.md`:
-   - For the chosen tier: "Ideal untuk", "Budget Proyek", "Dedicated Team",
-     "Timeline" rows
+   - For the chosen tier: "Ideal untuk", "Budget Proyek", "Dedicated Team"
+     rows
    - The full "Color Palette Reference" table (Primary Teal `#006D79`,
      Primary Light `#009BAD`, Dark BG `#0A1B1F`, CTA Green `#10B981`, etc.)
 4. Compose a single free-text instruction containing:
