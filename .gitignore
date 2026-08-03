@@ -24,3 +24,6 @@ conversations/
 .opencode/package-lock.json
 .opencode/bun.lock
 .opencode/.gitignore
+
+
+design_example/

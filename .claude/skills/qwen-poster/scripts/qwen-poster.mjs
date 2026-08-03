@@ -12,7 +12,7 @@ const PROFILE_DIR = path.join(PROJECT_ROOT, '.qwen-profile');
 const STORAGE_FILE = path.join(PROFILE_DIR, 'storage-state.json');
 const OUTPUT_DIR = path.join(PROJECT_ROOT, 'output');
 const CHAT_URL = process.env.QWEN_CHAT_URL || 'https://chat.qwen.ai/';
-const GEN_TIMEOUT = 5 * 60 * 1000;
+const GEN_TIMEOUT = 10 * 60 * 1000; // 10 menit timeout
 
 let SELECTORS = {};
 try {
@@ -150,17 +150,6 @@ async function clickDropdownOption(page, optionSelectors, label) {
 }
 
 async function enterImageMode(page) {
-  const think = await findFirst(page, SELECTORS.thinkingSelector);
-  if (think && (await think.count()) > 0) {
-    await think.first().click();
-    await page.waitForTimeout(800);
-    if (await clickDropdownOption(page, SELECTORS.thinkingOption, 'Thinking')) {
-      console.log('Thinking mode dipilih.');
-    }
-  } else {
-    console.log('NOTE: thinking selector tidak ditemukan — lanjut.');
-  }
-
   const mode = await findFirst(page, SELECTORS.modeButton);
   if (!mode || (await mode.count()) === 0) {
     console.log('FAIL: tombol mode tidak ditemukan. UI berubah? Jalankan "detect" lalu update selectors.json.');
@@ -206,40 +195,75 @@ async function sendPrompt(page, prompt) {
   }
 }
 
-async function waitForImage(page) {
-  console.log('Menunggu gambar selesai digenerate (max 5 menit)...');
+async function waitForImageComplete(page) {
+  console.log('Menunggu gambar selesai digenerate (max 10 menit)...');
   const deadline = Date.now() + GEN_TIMEOUT;
   let lastCount = 0;
   let stable = 0;
+  
   while (Date.now() < deadline) {
     await sleep(3000);
+    
+    // Cek apakah masih generating
+    const busy = await findFirst(page, SELECTORS.generatingIndicator);
+    const isGenerating = busy ? (await busy.count().catch(() => 0)) > 0 : false;
+    
+    // Cari semua img tags yang mungkin adalah hasil generate
     const imgs = await page.locator('img').all().catch(() => []);
     const candidates = [];
+    
     for (const img of imgs.slice(-10)) {
       const src = (await img.getAttribute('src').catch(() => '')) || '';
       const size = await img.evaluate((el) => `${el.naturalWidth}x${el.naturalHeight}`).catch(() => '0x0');
       const [w, h] = size.split('x').map(Number);
-      if (w > 100 && h > 100) candidates.push({ img, src, size });
+      
+      // Filter: harus gambar dengan ukuran reasonable (>200px)
+      // Dan bukan icon/logo website
+      if (w > 200 && h > 200 && !src.includes('alicdn.com') && !src.includes('icon')) {
+        candidates.push({ img, src, size: `${w}x${h}` });
+      }
     }
+    
     if (candidates.length > 0 && candidates.length !== lastCount) {
       console.log(`Gambar terdeteksi: ${candidates.length} (${candidates[candidates.length - 1].size})`);
       lastCount = candidates.length;
       stable = 0;
-    } else if (candidates.length > 0) {
+    } else if (candidates.length > 0 && !isGenerating) {
+      // Gambar sudah ada DAN tidak sedang generating
       stable++;
+      console.log(`Gambar stabil (${stable}/2 cek)...`);
     }
-    const busy = await findFirst(page, SELECTORS.generatingIndicator);
-    const busyCount = busy ? await busy.count().catch(() => 0) : 0;
-    if (candidates.length > 0 && busyCount === 0 && stable >= 2) {
-      await sleep(3000);
+    
+    // Jika gambar stabil 2x cek dan tidak generating, anggap selesai
+    if (candidates.length > 0 && !isGenerating && stable >= 2) {
+      await sleep(2000); // Tambah delay ekstra untuk memastikan
+      console.log('Gambar selesai digenerate!');
       return candidates[candidates.length - 1];
     }
+    
+    // Timeout check
+    if (Date.now() > deadline) {
+      throw new Error('Timeout menunggu gambar (10 menit). Mungkin generation gagal.');
+    }
   }
-  throw new Error('Timeout menunggu gambar (5 menit). Mungkin generation gagal atau UI berubah. Jalankan "detect".');
 }
 
-async function saveImage(page, img, outPath) {
+async function downloadImage(page, img, outPath) {
   const src = img.src;
+  
+  // Coba download via click tombol download jika ada
+  const downloadBtn = await findFirst(page, SELECTORS.downloadButton);
+  if (downloadBtn && (await downloadBtn.count()) > 0) {
+    console.log('Mencoba download via tombol Download...');
+    try {
+      const download = await downloadBtn.first().click();
+      await sleep(2000);
+    } catch (e) {
+      console.log('Download button click failed, fallback to fetch...');
+    }
+  }
+  
+  // Fallback: fetch via evaluate
   try {
     const b64 = await page.evaluate(async (s) => {
       const r = await fetch(s);
@@ -253,37 +277,55 @@ async function saveImage(page, img, outPath) {
       }
       return btoa(bin);
     }, src);
+    fs.mkdirSync(path.dirname(outPath), { recursive: true });
     fs.writeFileSync(outPath, Buffer.from(b64, 'base64'));
-  } catch {
-    console.log('Blob fetch gagal, fallback: screenshot elemen.');
+    console.log('Tersimpan:', outPath);
+  } catch (e) {
+    console.log('Fetch gagal, fallback screenshot...');
     await img.screenshot({ path: outPath });
+    console.log('Screenshot tersimpan:', outPath);
   }
-  console.log('Tersimpan:', outPath);
 }
 
 async function cmdGenerate(opts) {
   const { context, page } = await openBrowser({ headless: opts.headless });
-  const prompt = opts.prompt || buildPrompt(opts);
+  const prompt = opts.prompt || buildPrompt({ ...opts, promptOverride: opts.prompt });
   console.log('=== PROMPT KE QWEN ===\n' + prompt + '\n====================');
+  
   await page.goto(CHAT_URL, { waitUntil: 'domcontentloaded', timeout: 60000 });
+  
+  // Check login
   const logged = await findFirst(page, SELECTORS.chatInput);
   if (!logged || !(await logged.isEditable().catch(() => false))) {
     console.log('Belum login — buka jendela browser dan login manual.');
     await waitLoggedIn(page);
   }
+  
+  // Enter image mode
   const ok = await enterImageMode(page);
   if (!ok) {
+    console.log('Gagal masuk mode Create Image. Jalankan "detect" untuk debug.');
     await cmdDetect({ headless: true });
     process.exit(2);
   }
+  
+  // Send prompt
   await sendPrompt(page, prompt);
-  const found = await waitForImage(page);
+  console.log('Prompt terkirim. Menunggu gambar selesai digenerate...');
+  
+  // WAIT for image to complete (with proper timeout)
+  const found = await waitForImageComplete(page);
+  
+  // Save image
   fs.mkdirSync(OUTPUT_DIR, { recursive: true });
   const ts = new Date().toISOString().replace(/[-:T]/g, '').slice(0, 14);
   const outPath = opts.out ? path.resolve(opts.out) : path.join(OUTPUT_DIR, `qwen-poster-${ts}.png`);
-  await saveImage(page, found, outPath);
+  
+  await downloadImage(page, found, outPath);
   const size = found.size;
   console.log(`DONE: ${outPath} (${size}, ${fs.statSync(outPath).size} bytes)`);
+  
+  // Close browser after successful save
   await context.close();
   process.exit(0);
 }
@@ -414,6 +456,7 @@ GENERATE FLAGS:
   --headless         Jalan tanpa jendela browser (anti-bot lebih mudah kena)
 
 CATATAN:
+  - Script akan MENUNGGU hingga gambar selesai digenerate sebelum download.
   - Kalau UI chat.qwen.ai berubah: jalankan "detect", update selectors.json, ulangi.
   - Captcha/challenge: selesaikan manual di jendela browser, script menunggu otomatis.
   - Hanya jalankan SATU instance sekaligus (profile browser dipakai bersama).

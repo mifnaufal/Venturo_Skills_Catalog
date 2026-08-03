@@ -1,42 +1,55 @@
 {
   "chatInput": [
     "textarea.message-input-textarea",
+    "textarea[placeholder*='Describe the image']",
     "textarea"
   ],
-  "thinkingSelector": [
-    ".qwen-select-thinking-label"
-  ],
-  "thinkingOption": [
-    "div.ant-select-item-option-content:has-text('Thinking')"
-  ],
   "modeButton": [
-    "div.mode-select-open"
+    "div.mode-select-open",
+    "button[aria-label='Select Mode']",
+    ".mode-select-open"
   ],
   "menuCreateImage": [
+    "li.ant-dropdown-menu-item:has-text('Create Image')",
     "div.mode-select-dropdown-item:has-text('Create Image')",
-    "li.ant-dropdown-menu-item:has-text('Create Image')"
+    ":text('Create Image')"
   ],
   "imageModelButton": [
-    "div.image-model-selector-button"
+    "div.image-model-selector-button",
+    "span.ant-dropdown-trigger:has-text('Qwen-Image')"
   ],
   "imageModelOption": [
     "li.ant-dropdown-menu-item:has-text('Qwen-Image 3.0')",
-    "div.ant-dropdown-menu-item:has-text('Qwen-Image 3.0')"
+    "span.ant-dropdown-menu-title-content:has-text('Qwen-Image 3.0')",
+    ":text('Qwen-Image 3.0')"
   ],
   "sizeSelector": [
-    "div.size-selector"
+    "div.size-selector",
+    "span.ant-dropdown-trigger:has-text('Auto')"
   ],
   "sizeOption1to1": [
     "li.ant-dropdown-menu-item:has-text('1:1')",
-    "div.ant-dropdown-menu-item:has-text('1:1')"
+    ":text('1:1')"
   ],
   "sendButton": [
-    "button.send-button"
+    "button.send-button",
+    "div.message-input-container-area button",
+    "svg[class*='send']"
   ],
   "generatingIndicator": [
     "text=Generating",
     "text=generating",
     "text=绘制中",
-    "text=生成中"
+    "text=生成中",
+    "text=生成"
+  ],
+  "downloadButton": [
+    "div.upper-right-corner-item",
+    "button[aria-label*='Download']",
+    "svg[class*='download']"
+  ],
+  "usePromptButton": [
+    "button.chat-recommend-image-list-item-text-box-use-btn",
+    ":text('Use Prompt')"
   ]
 }
