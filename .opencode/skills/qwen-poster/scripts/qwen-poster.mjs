@@ -70,30 +70,44 @@ async function waitLoggedIn(page) {
 }
 
 async function openBrowser({ headless = false, loadState = true } = {}) {
-  // Use persistent context to leverage existing Chrome profile/cookies
-  // This avoids expired cookie issues from addCookies()
-  const profilePath = PROFILE_DIR;
-  const browser = await chromium.launchPersistentContext(profilePath, {
+  // Use regular launch() with temp profile to avoid persistent context hangs
+  const tempProfile = path.join(PROFILE_DIR, `temp-${Date.now()}`);
+  fs.mkdirSync(tempProfile, { recursive: true });
+  const browser = await chromium.launch({
     headless,
-    channel: 'chrome',
-    viewport: { width: 1440, height: 900 },
+    executablePath: '/usr/bin/google-chrome',
     args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
   });
+  const context = await browser.newContext({
+    viewport: { width: 1440, height: 900 },
+    userAgent: undefined,
+  });
 
-  // Use first page or create new one
-  const page = browser.pages()[0] || await browser.newPage();
-  console.log('Browser launched with persistent profile:', profilePath);
+  // Load saved cookies if available
+  if (loadState && fs.existsSync(STORAGE_FILE)) {
+    try {
+      const state = JSON.parse(fs.readFileSync(STORAGE_FILE, 'utf8'));
+      if (state.cookies && state.cookies.length > 0) {
+        await context.addCookies(state.cookies);
+        console.log('Loaded saved session from', STORAGE_FILE);
+      }
+    } catch (e) {
+      console.log('Failed to load storage state:', e.message);
+    }
+  }
 
-  return { context: browser, page, browser };
+  const page = await context.newPage();
+  return { context, page, browser };
 }
 
 async function cmdLogin({ headless }) {
-  const { context, page, browser } = await openBrowser({ headless: false });
+  const { context, page, browser } = await openBrowser({ headless, loadState: false });
   console.log('Buka', CHAT_URL, '— login manual di jendela browser.');
   await page.goto(CHAT_URL, { waitUntil: 'domcontentloaded' });
   await waitLoggedIn(page);
-  console.log('Login manual selesai. Menutup browser...');
-  // With persistent context, session is auto-saved in the profile
+  fs.mkdirSync(path.dirname(STORAGE_FILE), { recursive: true });
+  await context.storageState({ path: STORAGE_FILE });
+  console.log('Login tersimpan ke', STORAGE_FILE);
   await context.close();
   await browser.close();
   process.exit(0);
@@ -177,7 +191,7 @@ async function enterImageMode(page) {
     // New UI: "Create Image" is directly visible as a clickable element
     console.log('New UI: "Create Image" button visible, clicking it...');
     await page.locator('button:has-text("Create Image"), [role="button"]:has-text("Create Image")').first().click();
-    await page.waitForTimeout(2000);
+    await page.waitForTimeout(1500);
   } else {
     // Old UI: click "Select Mode" dropdown and select "Create Image"
     const mode = await findFirst(page, SELECTORS.modeButton);
@@ -190,48 +204,32 @@ async function enterImageMode(page) {
     if (!(await clickDropdownOption(page, SELECTORS.menuCreateImage, 'Create Image'))) return false;
   }
 
-  // Select Qwen-Image 3.0 model (if available)
-  const modelSelector = await page.locator('[class*="image-model-selector-button"]').first();
-  if (await modelSelector.count() > 0 && await modelSelector.isVisible()) {
-    console.log('Opening model selector...');
-    await modelSelector.click();
+  // Select Qwen-Image 2.0 model (current default)
+  const modelBtn = await findFirst(page, SELECTORS.imageModelButton);
+  if (modelBtn && (await modelBtn.count()) > 0) {
+    await modelBtn.first().click();
     await page.waitForTimeout(1000);
-    
-    // Try to select Qwen-Image 3.0, fallback to 2.0
-    const has30 = await page.evaluate(() => {
-      return Array.from(document.querySelectorAll('[class*="menu-item"]'))
-        .some(el => el.offsetParent !== null && el.innerText.includes('3.0'));
-    });
-    if (has30) {
-      console.log('Selecting Qwen-Image 3.0...');
-      await page.locator('[class*="menu-item"]:has-text("3.0")').first().click().catch(() => {});
-    } else {
-      console.log('Qwen-Image 3.0 not found, using Qwen-Image 2.0');
-      await page.locator('[class*="menu-item"]:has-text("2.0")').first().click().catch(() => {});
+    if (!(await clickDropdownOption(page, SELECTORS.imageModelOption, 'Qwen-Image 2.0'))) {
+      const currentModel = await page.evaluate(() => {
+        return document.querySelector('[class*="model"] span')?.innerText || '';
+      });
+      console.log('Current model:', currentModel);
     }
-    await page.waitForTimeout(1000);
   }
 
   // Select 1:1 aspect ratio
-  const sizeSelector = await page.locator('[class*="size-selector"]').first();
-  if (await sizeSelector.count() > 0 && await sizeSelector.isVisible()) {
-    console.log('Opening size selector...');
-    await sizeSelector.click();
-    await page.waitForTimeout(1500);
-    
-    const has1to1 = await page.evaluate(() => {
-      return Array.from(document.querySelectorAll('[class*="menu-item"]'))
-        .some(el => el.offsetParent !== null && el.innerText.includes('1:1'));
-    });
-    if (has1to1) {
-      console.log('Selecting 1:1...');
-      await page.locator('[class*="menu-item"]:has-text("1:1")').first().click().catch(() => {});
-    }
+  const sizeBtn = await findFirst(page, SELECTORS.sizeSelector);
+  if (sizeBtn && (await sizeBtn.count()) > 0) {
+    await sizeBtn.first().click();
     await page.waitForTimeout(1000);
+    if (!(await clickDropdownOption(page, SELECTORS.sizeOption1to1, '1:1'))) {
+      const currentSize = await page.evaluate(() => {
+        return document.querySelector('[class*="size"] span')?.innerText || '';
+      });
+      console.log('Current size:', currentSize);
+    }
   }
 
-  // Wait for UI to stabilize
-  await page.waitForTimeout(1000);
   console.log('Mode Create Image aktif.');
   return true;
 }
@@ -385,24 +383,11 @@ async function waitForImageComplete(page) {
         h: img.naturalHeight || img.offsetHeight || 0,
       })).filter(d => d.w > 100 && d.h > 100);
 
-      // Check for rate limit / error messages
-      const errorMessages = Array.from(document.querySelectorAll('[class*="error"], [class*="message-notice"], [class*="toast"]'))
-        .map(el => (el.innerText || '').trim())
-        .filter(t => t.length > 10 && t.length < 200);
-
-      return { skel, generatedImgs: newImgDetails.length, newImgDetails, errorMessages };
+      return { skel, generatedImgs: newImgDetails.length, newImgDetails };
     }, excludeSrcs);
 
     const elapsed = Math.floor((Date.now() - startTime) / 1000);
     console.log(`  [${elapsed}s] skel=${result.skel} generatedImgs=${result.generatedImgs}`);
-
-    // Early exit if we detect rate limit / usage limit / quota error
-    const limitError = result.errorMessages.find(m =>
-      /daily usage limit|rate limit|quota|too many requests|please wait/i.test(m)
-    );
-    if (limitError) {
-      throw new Error(`Qwen API limit reached: ${limitError}`);
-    }
 
     if (result.newImgDetails.length > 0) {
       const best = result.newImgDetails[result.newImgDetails.length - 1];
@@ -493,23 +478,19 @@ async function cmdGenerate(opts) {
   console.log('=== PROMPT KE QWEN ===\n' + prompt + '\n====================');
 
   await page.goto(CHAT_URL, { waitUntil: 'domcontentloaded', timeout: 60000 });
-  await page.waitForTimeout(2000);
 
-  // Check login by looking for avatar/profile button (not Log in/Sign up)
-  const hasAvatar = await page.evaluate(() => {
-    const buttons = Array.from(document.querySelectorAll('button'));
-    return buttons.some(b => {
-      const text = (b.innerText || '').trim();
-      // If there's a name/username shown, user is logged in
-      return text.length > 2 && text !== 'Log in' && text !== 'Sign up';
-    });
-  }).catch(() => true);
-  
-  if (!hasAvatar) {
-    console.log('Not logged in. Jalankan:');
-    console.log('  node .claude/skills/qwen-poster/scripts/qwen-poster.mjs login');
-    await browser.close();
-    process.exit(0);
+  // Check login - if not logged in, save session and exit for user to retry
+  try {
+    const loginBtn = await page.locator('button:has-text("Log in")').first();
+    const loginVisible = await loginBtn.isVisible().catch(() => false);
+    if (loginVisible) {
+      console.log('Not logged in. Please login first by running:');
+      console.log('  node scripts/login-manual.mjs');
+      await browser.close();
+      process.exit(0);
+    }
+  } catch (e) {
+    // Ignore errors, assume logged in
   }
   
   // Enter image mode
@@ -520,14 +501,7 @@ async function cmdGenerate(opts) {
     process.exit(2);
   }
 
-  // Upload Venturo logo - default SKIP (Qwen generation hangs with attachments)
-  // Set useLogo=true in config.json to enable
-  let useLogoFromConfig = false;
-  try {
-    const cfg = JSON.parse(fs.readFileSync(path.join(SCRIPT_DIR, '..', 'config.json'), 'utf8'));
-    useLogoFromConfig = cfg.useLogo === true;
-  } catch {}
-
+  // Upload Venturo logo - skip if --no-logo, use default logo otherwise
   if (opts.logo === null) {
     console.log('Lewati upload logo (--no-logo)');
   } else if (opts.logo) {
@@ -536,14 +510,14 @@ async function cmdGenerate(opts) {
     if (!uploaded) {
       console.log('Upload logo gagal, lanjut tanpa logo');
     }
-  } else if (useLogoFromConfig && fs.existsSync(DEFAULT_LOGO)) {
+  } else if (fs.existsSync(DEFAULT_LOGO)) {
     console.log('Upload logo (default Venturo):', DEFAULT_LOGO);
     const uploaded = await uploadAttachment(page, DEFAULT_LOGO);
     if (!uploaded) {
       console.log('Upload logo gagal, lanjut tanpa logo');
     }
   } else {
-    console.log('Lewati upload logo (useLogo=false di config atau file tidak ada)');
+    console.log('Lewati upload logo (file tidak ditemukan):', DEFAULT_LOGO);
   }
 
   // Build prompt with explicit instruction about the uploaded image
@@ -657,7 +631,6 @@ function parseArgs(argv) {
     else if (a === '--accent-color') opts.accentColor = argv[++i];
     else if (a === '--style') opts.style = argv[++i];
     else if (a === '--aspect-ratio') opts.aspectRatio = argv[++i];
-    else if (a === '--model') opts.model = argv[++i];
     else if (a === '--logo') opts.logo = argv[++i];
     else if (a === '--no-logo') opts.logo = null;
   }
